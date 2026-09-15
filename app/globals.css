@@ -150,13 +150,46 @@
 .machine-panel {
   flex: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 2.5rem;
+  padding: 3rem 2rem;
 }
 
 .machine-panel h1 {
   color: #e11d48;
   font-size: 3.5rem;
   font-weight: bold;
+  margin: 0;
+}
+
+.machine-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.machine {
+  width: 100%;
+  box-sizing: border-box;
+  background: #18181b;
+  border: 1px solid #e11d48;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  text-align: center;
+}
+
+.machine h2 {
+  color: #ffffff;
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.machine p {
+  color: #ffffff;
+  font-size: 0.95rem;
   margin: 0;
 }
