@@ -172,6 +172,16 @@
   max-width: 400px;
 }
 
+.machine-message {
+  color: #ffffff;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.machine-message-error {
+  color: #fda4af;
+}
+
 .machine {
   width: 100%;
   box-sizing: border-box;
