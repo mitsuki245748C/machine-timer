@@ -11,17 +11,18 @@ type Machine = {
 
 export const dynamic = "force-dynamic";
 
+const GENERIC_ERROR_MESSAGE = "器具一覧の取得に失敗しました。";
+
 export async function GET() {
   const env = getSupabaseEnv();
 
   if (env.error) {
-    return Response.json(
-      {
-        error: "Supabase environment variables are missing.",
-        missingEnvNames: env.error.missingEnvNames,
-      },
-      { status: 500 },
+    console.error(
+      "[GET /api/machines] Supabase の環境変数が未設定です:",
+      env.error.missingEnvNames.join(", "),
     );
+
+    return Response.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 });
   }
 
   const supabase = createSupabaseServerClient(
@@ -36,14 +37,10 @@ export async function GET() {
     .overrideTypes<Machine[]>();
 
   if (error) {
-    return Response.json(
-      {
-        error: "Failed to fetch machines.",
-        details: error.message,
-      },
-      { status: 500 },
-    );
+    console.error("[GET /api/machines] 器具一覧の取得に失敗しました:", error);
+
+    return Response.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 });
   }
 
-  return Response.json({ machines: data });
+  return Response.json({ machines: data ?? [] });
 }

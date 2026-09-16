@@ -13,6 +13,8 @@ type MachinesResponse = {
   error?: string;
 };
 
+const FALLBACK_ERROR_MESSAGE = "器具一覧の取得に失敗しました。";
+
 export default function Home() {
   const [machines, setMachines] = useState<Machine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,16 +27,14 @@ export default function Home() {
         const data = (await response.json()) as MachinesResponse;
 
         if (!response.ok) {
-          throw new Error(data.error ?? "器具一覧の取得に失敗しました。");
+          setErrorMessage(data.error ?? FALLBACK_ERROR_MESSAGE);
+          return;
         }
 
         setMachines(data.machines ?? []);
       } catch (error) {
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "器具一覧の取得に失敗しました。",
-        );
+        console.error(error);
+        setErrorMessage(FALLBACK_ERROR_MESSAGE);
       } finally {
         setIsLoading(false);
       }
