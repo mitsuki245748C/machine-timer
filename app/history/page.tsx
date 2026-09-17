@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 import { useStopwatches } from "../stopwatch/use-stopwatches";
 
@@ -19,7 +19,7 @@ type SetData = {
   reps: string;
 };
 
-export default function History() {
+function HistoryContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -294,5 +294,13 @@ export default function History() {
         </form>
       </main>
     </div>
+  );
+}
+
+export default function History() {
+  return (
+    <Suspense fallback={null}>
+      <HistoryContent />
+    </Suspense>
   );
 }
