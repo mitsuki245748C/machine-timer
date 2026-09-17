@@ -101,24 +101,6 @@ export function Stopwatch() {
     }
   }
 
-  async function handleResetButtonClick(machineId: number) {
-    setStatusError("");
-    setUpdatingMachineId(machineId);
-
-    try {
-      await updateMachineStatus(machineId, "空き");
-      await sendAction("reset", machineId);
-    } catch (error) {
-      setStatusError(
-        error instanceof Error
-          ? error.message
-          : "ステータスの更新に失敗しました。",
-      );
-    } finally {
-      setUpdatingMachineId(null);
-    }
-  }
-
   async function handleReserveButtonClick(machineId: number) {
     setStatusError("");
     await sendAction("reserve", machineId);
@@ -172,26 +154,20 @@ export function Stopwatch() {
 
                 <div className="stopwatch-controls">
                   {canControl ? (
-                    <>
-                      <button
-                        onClick={() => void handleStartButtonClick(machine.id)}
-                        disabled={disabled || isRunning}
-                      >
-                        {isUpdating ? "更新中..." : "Start"}
-                      </button>
-                      <button
-                        onClick={() => void handleResetButtonClick(machine.id)}
-                        disabled={disabled}
-                      >
-                        {isUpdating ? "更新中..." : "Reset"}
-                      </button>
-                    </>
+                    <button
+                      className="machine-button"
+                      onClick={() => void handleStartButtonClick(machine.id)}
+                      disabled={disabled || isRunning}
+                    >
+                      {isUpdating ? "更新中..." : "開始する"}
+                    </button>
                   ) : reservedByMe ? (
                     <p className="machine-reserved">予約しています</p>
                   ) : isReserved ? (
                     <p className="machine-reserved">予約済みです</p>
                   ) : (
                     <button
+                      className="machine-button-reserve"
                       onClick={() => void handleReserveButtonClick(machine.id)}
                       disabled={disabled}
                     >

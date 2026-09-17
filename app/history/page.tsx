@@ -134,6 +134,12 @@ export default function History() {
           {state ? formatTime(state.seconds) : "--:--"}
         </p>
 
+        {state?.isReserved && (
+          <p className="machine-notice">
+            予約されています。長時間の利用はおやめください。
+          </p>
+        )}
+
         <form onSubmit={handleSubmit}>
           {sets.map((set, index) => (
             <div
