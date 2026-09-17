@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { machines } from "./model";
 import { useStopwatches } from "./use-stopwatches";
 
 type Machine = {
@@ -25,18 +24,17 @@ function formatTime(seconds: number): string {
   return `${minutes.toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 }
 
-export default function StopwatchPage() {
+export function Stopwatch() {
   const { data, error, pending, sendAction } = useStopwatches();
-  const [machineStatuses, setMachineStatuses] = useState<
-    Record<number, string>
-  >({});
+  const [machines, setMachines] = useState<Machine[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [statusError, setStatusError] = useState("");
   const [updatingMachineId, setUpdatingMachineId] = useState<number | null>(
     null,
   );
 
   useEffect(() => {
-    async function fetchMachineStatuses() {
+    async function fetchMachines() {
       try {
         const response = await fetch("/api/machines");
         const data = (await response.json()) as MachinesResponse;
@@ -46,17 +44,16 @@ export default function StopwatchPage() {
           return;
         }
 
-        const nextStatuses = Object.fromEntries(
-          (data.machines ?? []).map((machine) => [machine.id, machine.status]),
-        );
-        setMachineStatuses(nextStatuses);
+        setMachines(data.machines ?? []);
       } catch (error) {
         console.error(error);
         setStatusError("器具の状態を取得できませんでした。");
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    fetchMachineStatuses();
+    fetchMachines();
   }, []);
 
   async function updateMachineStatus(machineId: number, status: string) {
@@ -74,10 +71,13 @@ export default function StopwatchPage() {
     }
 
     const updatedMachine = data.machine;
-    setMachineStatuses((currentStatuses) => ({
-      ...currentStatuses,
-      [updatedMachine.id]: updatedMachine.status,
-    }));
+    setMachines((currentMachines) =>
+      currentMachines.map((currentMachine) =>
+        currentMachine.id === updatedMachine.id
+          ? updatedMachine
+          : currentMachine,
+      ),
+    );
   }
 
   async function handleStartButtonClick(machineId: number) {
@@ -117,49 +117,58 @@ export default function StopwatchPage() {
   }
 
   return (
-    <div className="home">
-      <header className="banner">Machine Timer</header>
-      <main className="machine-panel" aria-label="Machine Timer">
-        <h1>Machine Timer</h1>
-        {error && <p role="alert" style={{ color: "#ffffff" }}>{error}</p>}
-        {statusError && (
-          <p role="alert" style={{ color: "#fda4af" }}>{statusError}</p>
-        )}
-        <div className="machine-list">
-          {machines.map((machine) => {
-            const state = data?.machines.find(({ id }) => id === machine.id)?.state;
-            const isUpdating = updatingMachineId === machine.id;
-            const disabled = !state || pending || isUpdating;
-            const status =
-              machineStatuses[machine.id] ??
-              (state ? (state.isRunning ? "使用中" : "空き") : "読み込み中…");
+    <>
+      {error && (
+        <p role="alert" className="machine-message">
+          {error}
+        </p>
+      )}
+      {statusError && (
+        <p role="alert" className="machine-message machine-message-error">
+          {statusError}
+        </p>
+      )}
+      {isLoading && <p className="machine-message">Loading machines...</p>}
+      {!isLoading && !statusError && machines.length === 0 && (
+        <p className="machine-message">器具がまだ登録されていません。</p>
+      )}
+      <div className="machine-list">
+        {machines.map((machine) => {
+          const state = data?.machines.find(
+            ({ id }) => id === machine.id,
+          )?.state;
+          const isUpdating = updatingMachineId === machine.id;
+          const disabled = pending || isUpdating;
 
-            return (
-              <section key={machine.id} className="machine" aria-labelledby={`machine-${machine.id}`}>
-                <h2 id={`machine-${machine.id}`}>{machine.name}</h2>
-                <p>Status: {status}</p>
-                <div className="stopwatch">
-                  <p>{state ? formatTime(state.seconds) : "--:--"}</p>
-                  <div className="stopwatch-controls">
-                    <button
-                      onClick={() => void handleStartButtonClick(machine.id)}
-                      disabled={disabled || state?.isRunning}
-                    >
-                      {isUpdating ? "更新中..." : "Start"}
-                    </button>
-                    <button
-                      onClick={() => void handleResetButtonClick(machine.id)}
-                      disabled={disabled}
-                    >
-                      {isUpdating ? "更新中..." : "Reset"}
-                    </button>
-                  </div>
+          return (
+            <section
+              key={machine.id}
+              className="machine"
+              aria-labelledby={`machine-${machine.id}`}
+            >
+              <h2 id={`machine-${machine.id}`}>{machine.name}</h2>
+              <p>Status: {machine.status}</p>
+              <div className="stopwatch">
+                <p>{state ? formatTime(state.seconds) : "--:--"}</p>
+                <div className="stopwatch-controls">
+                  <button
+                    onClick={() => void handleStartButtonClick(machine.id)}
+                    disabled={disabled || state?.isRunning}
+                  >
+                    {isUpdating ? "更新中..." : "Start"}
+                  </button>
+                  <button
+                    onClick={() => void handleResetButtonClick(machine.id)}
+                    disabled={disabled}
+                  >
+                    {isUpdating ? "更新中..." : "Reset"}
+                  </button>
                 </div>
-              </section>
-            );
-          })}
-        </div>
-      </main>
-    </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </>
   );
 }
