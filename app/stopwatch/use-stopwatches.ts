@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { StopwatchAction, StopwatchResponse } from "./model";
 
-async function requestState(options: RequestInit): Promise<StopwatchResponse> {
+async function requestState(options: RequestInit = {}): Promise<StopwatchResponse> {
   const response = await fetch("/api/stopwatch", { ...options, cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`通信に失敗しました（${response.status}）。`);
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.error ?? `通信に失敗しました（${response.status}）。`);
   }
   return response.json();
 }
@@ -30,7 +31,6 @@ export function useStopwatches() {
       const requestedRevision = revision.current;
       try {
         const next = await requestState({ signal: controller.signal });
-        // A GET started before an action must not overwrite its result.
         if (!controller.signal.aborted && requestedRevision === revision.current) {
           setData(next);
           setError(null);
@@ -45,7 +45,6 @@ export function useStopwatches() {
     }
 
     void refresh();
-    // Keep polling while stopped so actions from other browsers are reflected.
     const intervalId = setInterval(() => void refresh(), 1000);
     return () => {
       clearInterval(intervalId);
@@ -69,9 +68,9 @@ export function useStopwatches() {
         signal: controller.signal,
       });
       if (!controller.signal.aborted) setData(next);
-    } catch {
+    } catch (err) {
       if (!controller.signal.aborted) {
-        setError("操作結果を確認できませんでした。最新の状態をご確認ください。");
+        setError(err instanceof Error ? err.message : "操作結果を確認できませんでした。最新の状態をご確認ください。");
       }
     } finally {
       actionInFlight.current = false;

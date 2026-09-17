@@ -116,6 +116,11 @@ export function Stopwatch() {
     }
   }
 
+  async function handleReserveButtonClick(machineId: number) {
+    setStatusError("");
+    await sendAction("reserve", machineId);
+  }
+
   return (
     <>
       {error && (
@@ -139,6 +144,11 @@ export function Stopwatch() {
           )?.state;
           const isUpdating = updatingMachineId === machine.id;
           const disabled = pending || isUpdating;
+          const isRunning = state?.isRunning ?? false;
+          const startedByMe = state?.startedByMe ?? false;
+          const isReserved = state?.isReserved ?? false;
+          const reservedByMe = state?.reservedByMe ?? false;
+          const canControl = !isRunning || startedByMe;
 
           return (
             <section
@@ -150,19 +160,41 @@ export function Stopwatch() {
               <p>Status: {machine.status}</p>
               <div className="stopwatch">
                 <p>{state ? formatTime(state.seconds) : "--:--"}</p>
+
+                {isRunning && startedByMe && isReserved && (
+                  <p className="machine-notice">
+                    予約されています。長時間の利用はおやめください。
+                  </p>
+                )}
+
                 <div className="stopwatch-controls">
-                  <button
-                    onClick={() => void handleStartButtonClick(machine.id)}
-                    disabled={disabled || state?.isRunning}
-                  >
-                    {isUpdating ? "更新中..." : "Start"}
-                  </button>
-                  <button
-                    onClick={() => void handleResetButtonClick(machine.id)}
-                    disabled={disabled}
-                  >
-                    {isUpdating ? "更新中..." : "Reset"}
-                  </button>
+                  {canControl ? (
+                    <>
+                      <button
+                        onClick={() => void handleStartButtonClick(machine.id)}
+                        disabled={disabled || isRunning}
+                      >
+                        {isUpdating ? "更新中..." : "Start"}
+                      </button>
+                      <button
+                        onClick={() => void handleResetButtonClick(machine.id)}
+                        disabled={disabled}
+                      >
+                        {isUpdating ? "更新中..." : "Reset"}
+                      </button>
+                    </>
+                  ) : reservedByMe ? (
+                    <p className="machine-reserved">予約しています</p>
+                  ) : isReserved ? (
+                    <p className="machine-reserved">予約済みです</p>
+                  ) : (
+                    <button
+                      onClick={() => void handleReserveButtonClick(machine.id)}
+                      disabled={disabled}
+                    >
+                      {isUpdating ? "更新中..." : "予約する"}
+                    </button>
+                  )}
                 </div>
               </div>
             </section>
