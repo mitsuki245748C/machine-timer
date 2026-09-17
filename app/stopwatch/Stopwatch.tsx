@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useStopwatches } from "./use-stopwatches";
+import { useRouter } from "next/navigation";
 
 type Machine = {
   id: number;
@@ -25,6 +26,7 @@ function formatTime(seconds: number): string {
 }
 
 export function Stopwatch() {
+  const router = useRouter();
   const { data, error, pending, sendAction } = useStopwatches();
   const [machines, setMachines] = useState<Machine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,24 +89,7 @@ export function Stopwatch() {
     try {
       await updateMachineStatus(machineId, "使用中");
       await sendAction("start", machineId);
-    } catch (error) {
-      setStatusError(
-        error instanceof Error
-          ? error.message
-          : "ステータスの更新に失敗しました。",
-      );
-    } finally {
-      setUpdatingMachineId(null);
-    }
-  }
-
-  async function handleResetButtonClick(machineId: number) {
-    setStatusError("");
-    setUpdatingMachineId(machineId);
-
-    try {
-      await updateMachineStatus(machineId, "空き");
-      await sendAction("reset", machineId);
+      router.push(`/history?machineId=${machineId}`);  //マシンidのパスを取得したお
     } catch (error) {
       setStatusError(
         error instanceof Error
@@ -169,26 +154,20 @@ export function Stopwatch() {
 
                 <div className="stopwatch-controls">
                   {canControl ? (
-                    <>
-                      <button
-                        onClick={() => void handleStartButtonClick(machine.id)}
-                        disabled={disabled || isRunning}
-                      >
-                        {isUpdating ? "更新中..." : "Start"}
-                      </button>
-                      <button
-                        onClick={() => void handleResetButtonClick(machine.id)}
-                        disabled={disabled}
-                      >
-                        {isUpdating ? "更新中..." : "Reset"}
-                      </button>
-                    </>
+                    <button
+                      className="machine-button"
+                      onClick={() => void handleStartButtonClick(machine.id)}
+                      disabled={disabled || isRunning}
+                    >
+                      {isUpdating ? "更新中..." : "開始する"}
+                    </button>
                   ) : reservedByMe ? (
                     <p className="machine-reserved">予約しています</p>
                   ) : isReserved ? (
                     <p className="machine-reserved">予約済みです</p>
                   ) : (
                     <button
+                      className="machine-button-reserve"
                       onClick={() => void handleReserveButtonClick(machine.id)}
                       disabled={disabled}
                     >
