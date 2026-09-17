@@ -1,4 +1,4 @@
-import { machines, type StopwatchResponse } from "../../stopwatch/model";
+import type { StopwatchResponse } from "../../stopwatch/model";
 
 type Timer = {
   startedAt: number | null;
@@ -6,9 +6,16 @@ type Timer = {
 };
 
 // Single-process demo storage. Restarting the server clears the timers.
-const timers = new Map<number, Timer>(
-  machines.map(({ id }) => [id, { startedAt: null, elapsedMilliseconds: 0 }]),
-);
+const timers = new Map<number, Timer>();
+
+function getOrCreateTimer(machineId: number): Timer {
+  let timer = timers.get(machineId);
+  if (!timer) {
+    timer = { startedAt: null, elapsedMilliseconds: 0 };
+    timers.set(machineId, timer);
+  }
+  return timer;
+}
 
 function elapsedMilliseconds(timer: Timer, now: number): number {
   return timer.elapsedMilliseconds +
@@ -51,10 +58,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "マシンIDが不正です。" }, { status: 400 });
   }
 
-  const timer = timers.get(machineId);
-  if (!timer) {
-    return Response.json({ error: "マシンが見つかりません。" }, { status: 404 });
-  }
+  const timer = getOrCreateTimer(machineId);
 
   const now = Date.now();
   switch (action) {
