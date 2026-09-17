@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useStopwatches } from "./use-stopwatches";
+import { useRouter } from "next/navigation";
 
 type Machine = {
   id: number;
@@ -25,6 +26,7 @@ function formatTime(seconds: number): string {
 }
 
 export function Stopwatch() {
+  const router = useRouter();
   const { data, error, pending, sendAction } = useStopwatches();
   const [machines, setMachines] = useState<Machine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +89,7 @@ export function Stopwatch() {
     try {
       await updateMachineStatus(machineId, "使用中");
       await sendAction("start", machineId);
+      router.push(`/history?machineId=${machineId}`);  //マシンidのパスを取得したお
     } catch (error) {
       setStatusError(
         error instanceof Error
