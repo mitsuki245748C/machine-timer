@@ -78,26 +78,23 @@ function HistoryContent() {
   ) => {
     e.preventDefault();
 
-    console.log({
-      machineId,
-      sets,
-    });
-
     try {
-      // 器具のステータスを「空き」に変更
-      const response = await fetch(
-        `/api/machines/${machineId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: "空き",
-          }),
-        }
-      );
+      // 筋トレ記録を保存（つなぎでCookie。後でSupabaseに差し替え予定）
+      const recordResponse = await fetch("/api/records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ machineId, sets }),
+      });
+      if (!recordResponse.ok) {
+        throw new Error("記録の保存に失敗しました。");
+      }
 
+      // 器具のステータスを「空き」に戻す
+      const response = await fetch(`/api/machines/${machineId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "空き" }),
+      });
       if (!response.ok) {
         throw new Error("器具のステータス更新に失敗しました。");
       }
