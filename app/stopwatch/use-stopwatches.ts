@@ -52,9 +52,9 @@ export function useStopwatches() {
     };
   }, []);
 
-  async function sendAction(action: StopwatchAction, machineId: number) {
+  async function sendAction(action: StopwatchAction, machineId: number): Promise<boolean> {
     const controller = controllerRef.current;
-    if (!controller || controller.signal.aborted || actionInFlight.current) return;
+    if (!controller || controller.signal.aborted || actionInFlight.current) return false;
 
     actionInFlight.current = true;
     revision.current += 1;
@@ -68,10 +68,12 @@ export function useStopwatches() {
         signal: controller.signal,
       });
       if (!controller.signal.aborted) setData(next);
+      return true;
     } catch (err) {
       if (!controller.signal.aborted) {
         setError(err instanceof Error ? err.message : "操作結果を確認できませんでした。最新の状態をご確認ください。");
       }
+      return false;
     } finally {
       actionInFlight.current = false;
       if (!controller.signal.aborted) setPending(false);
