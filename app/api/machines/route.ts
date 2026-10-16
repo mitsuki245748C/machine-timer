@@ -6,7 +6,6 @@ import {
 type Machine = {
   id: number;
   name: string;
-  status: string;
 };
 
 export const dynamic = "force-dynamic";
@@ -32,7 +31,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("machines")
-    .select("id, name, status")
+    .select("id, name")
     .order("id", { ascending: true })
     .overrideTypes<Machine[]>();
 
