@@ -26,7 +26,7 @@ function HistoryContent() {
   // URLからidを取得
   const machineId = Number(searchParams.get("machineId"));
 
-  const { data, sendAction, pending } = useStopwatches();
+  const { data, error, sendAction, pending } = useStopwatches();
 
   // そのidのマシンだけ抜き出す
   const state = data?.machines.find(({ id }) => id === machineId)?.state;
@@ -78,37 +78,25 @@ function HistoryContent() {
   ) => {
     e.preventDefault();
 
-    console.log({
-      machineId,
-      sets,
-    });
-
     try {
-      // 器具のステータスを「空き」に変更
-      const response = await fetch(
-        `/api/machines/${machineId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: "空き",
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("器具のステータス更新に失敗しました。");
+      // 筋トレ記録を保存（つなぎでCookie。後でSupabaseに差し替え予定）
+      const recordResponse = await fetch("/api/records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ machineId, sets }),
+      });
+      if (!recordResponse.ok) {
+        throw new Error("記録の保存に失敗しました。");
       }
-
-      // タイマーをリセット
-      await sendAction("reset", machineId);
-
-      // リセット完了後、トップページへ戻る
-      router.push("/");
     } catch (error) {
       console.error(error);
+      return;
+    }
+
+    // タイマーを終了（使用中/空きはタイマーの状態から判断する）
+    if (await sendAction("reset", machineId)) {
+      // 終了完了後、トップページへ戻る
+      router.push("/");
     }
   };
 
@@ -133,6 +121,12 @@ function HistoryContent() {
         >
           {state ? formatTime(state.seconds) : "--:--"}
         </p>
+
+        {error && (
+          <p role="alert" className="machine-message machine-message-error">
+            {error}
+          </p>
+        )}
 
         {state?.isReserved && (
           <p className="machine-notice">

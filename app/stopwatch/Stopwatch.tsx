@@ -7,16 +7,10 @@ import { useRouter } from "next/navigation";
 type Machine = {
   id: number;
   name: string;
-  status: string;
 };
 
 type MachinesResponse = {
   machines?: Machine[];
-  error?: string;
-};
-
-type UpdateMachineStatusResponse = {
-  machine?: Machine;
   error?: string;
 };
 
@@ -58,44 +52,15 @@ export function Stopwatch() {
     fetchMachines();
   }, []);
 
-  async function updateMachineStatus(machineId: number, status: string) {
-    const response = await fetch(`/api/machines/${machineId}/status`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status }),
-    });
-    const data = (await response.json()) as UpdateMachineStatusResponse;
-
-    if (!response.ok || !data.machine) {
-      throw new Error(data.error ?? "ステータスの更新に失敗しました。");
-    }
-
-    const updatedMachine = data.machine;
-    setMachines((currentMachines) =>
-      currentMachines.map((currentMachine) =>
-        currentMachine.id === updatedMachine.id
-          ? updatedMachine
-          : currentMachine,
-      ),
-    );
-  }
-
   async function handleStartButtonClick(machineId: number) {
     setStatusError("");
     setUpdatingMachineId(machineId);
 
     try {
-      await updateMachineStatus(machineId, "使用中");
-      await sendAction("start", machineId);
-      router.push(`/history?machineId=${machineId}`);  //マシンidのパスを取得したお
-    } catch (error) {
-      setStatusError(
-        error instanceof Error
-          ? error.message
-          : "ステータスの更新に失敗しました。",
-      );
+      // 失敗時のエラー表示は useStopwatches 側で行う
+      if (await sendAction("start", machineId)) {
+        router.push(`/history?machineId=${machineId}`);
+      }
     } finally {
       setUpdatingMachineId(null);
     }
@@ -142,9 +107,9 @@ export function Stopwatch() {
               aria-labelledby={`machine-${machine.id}`}
             >
               <h2 id={`machine-${machine.id}`}>{machine.name}</h2>
-              <p>Status: {machine.status}</p>
+              <p>Status: {data ? (isRunning ? "使用中" : "空き") : "--"}</p>
               <div className="stopwatch">
-                <p>{state ? formatTime(state.seconds) : "--:--"}</p>
+                <p>{data ? formatTime(state?.seconds ?? 0) : "--:--"}</p>
 
                 {isRunning && startedByMe && isReserved && (
                   <p className="machine-notice">
