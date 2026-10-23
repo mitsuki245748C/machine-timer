@@ -27,10 +27,41 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // セッションを最新化（これを呼ぶことでトークンが更新される）
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+  const isPublicPath = pathname === "/login" || pathname.startsWith("/auth/");
+
+  if (!user && !isPublicPath) {
+    if (pathname.startsWith("/api/")) {
+      return withSessionCookies(
+        NextResponse.json({ error: "ログインしてください。" }, { status: 401 }),
+        response,
+      );
+    }
+    return redirectTo("/login", request, response);
+  }
+
+  // ログイン済みならログインページは不要
+  if (user && pathname === "/login") {
+    return redirectTo("/", request, response);
+  }
 
   return response;
+}
+
+function withSessionCookies(target: NextResponse, source: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => target.cookies.set(cookie));
+  return target;
+}
+
+function redirectTo(path: string, request: NextRequest, response: NextResponse) {
+  const url = request.nextUrl.clone();
+  url.pathname = path;
+  url.search = "";
+  return withSessionCookies(NextResponse.redirect(url), response);
 }
 
 // この middleware を動かす対象パス。
