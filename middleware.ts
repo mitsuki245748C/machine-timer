@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// ログイン後に戻る先を一時的に覚えておく Cookie 名（app/auth/callback で使う）
+const LOGIN_NEXT_COOKIE = "login-next";
+
 // ログインセッション（Cookie）を自動で更新し続けるための仕組み。
 // ページアクセスのたびに走り、ログイン状態を維持する。
 export async function middleware(request: NextRequest) {
@@ -41,7 +44,17 @@ export async function middleware(request: NextRequest) {
         response,
       );
     }
-    return redirectTo("/login", request, response);
+    const redirect = redirectTo("/login", request, response);
+    // QRの読み取り先(/m/...)なら、ログイン後に戻れるよう行き先を覚えておく
+    if (pathname.startsWith("/m/")) {
+      redirect.cookies.set(LOGIN_NEXT_COOKIE, pathname, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 10,
+      });
+    }
+    return redirect;
   }
 
   // ログイン済みならログインページは不要

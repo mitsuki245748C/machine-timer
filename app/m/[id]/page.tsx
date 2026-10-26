@@ -8,7 +8,6 @@ import { useStopwatches } from "../../stopwatch/use-stopwatches";
 type Machine = {
   id: number;
   name: string;
-  status: string;
 };
 
 export default function MachineScanPage() {
@@ -22,6 +21,10 @@ export default function MachineScanPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [statusError, setStatusError] = useState("");
   const [isStarting, setIsStarting] = useState(false);
+  // 自動で行った操作が失敗したとき、どの操作かを覚えておく（エラー文はフックの error に出る）
+  const [failedAction, setFailedAction] = useState<"start" | "reserve" | null>(
+    null,
+  );
   const autoHandled = useRef(false);
 
   useEffect(() => {
@@ -58,27 +61,16 @@ export default function MachineScanPage() {
 
   async function handleStart() {
     setStatusError("");
+    setFailedAction(null);
     setIsStarting(true);
 
     try {
-      const response = await fetch(`/api/machines/${machineId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "使用中" }),
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(body?.error ?? "ステータスの更新に失敗しました。");
+      // 失敗時のエラー表示は useStopwatches 側で行う
+      if (await sendAction("start", machineId)) {
+        router.push(`/history?machineId=${machineId}`);
+      } else {
+        setFailedAction("start");
       }
-
-      await sendAction("start", machineId);
-      router.push(`/history?machineId=${machineId}`);
-    } catch (err) {
-      setStatusError(
-        err instanceof Error ? err.message : "ステータスの更新に失敗しました。",
-      );
     } finally {
       setIsStarting(false);
     }
@@ -99,8 +91,12 @@ export default function MachineScanPage() {
     } else {
       autoHandled.current = true;
       void (async () => {
-        if (!isReserved) await sendAction("reserve", machineId);
-        router.replace("/");
+        // すでに予約があるか、予約に成功したときだけホームへ戻る
+        if (isReserved || (await sendAction("reserve", machineId))) {
+          router.replace("/");
+        } else {
+          setFailedAction("reserve");
+        }
       })();
     }
     // handleStart は毎回作り直されるが、autoHandled により1回しか実行しない
@@ -138,13 +134,20 @@ export default function MachineScanPage() {
         {machine && (
           <section className="machine" aria-labelledby="machine-name">
             <h2 id="machine-name">{machine.name}</h2>
-            {statusError ? (
+            {failedAction === "start" || statusError ? (
               <button
                 className="machine-button"
                 onClick={() => void handleStart()}
                 disabled={disabled}
               >
                 {isStarting ? "更新中..." : "開始する"}
+              </button>
+            ) : failedAction === "reserve" ? (
+              <button
+                className="machine-button"
+                onClick={() => router.replace("/")}
+              >
+                ホームへ戻る
               </button>
             ) : (
               <p className="machine-message">処理中...</p>
