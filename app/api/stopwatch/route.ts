@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { getCurrentUserId } from "@/lib/supabase/auth";
 import {
   createSupabaseServerClient,
   getSupabaseEnv,
@@ -6,8 +6,6 @@ import {
 import type { StopwatchResponse } from "../../stopwatch/model";
 
 export const dynamic = "force-dynamic";
-
-const CLIENT_ID_COOKIE = "machine-timer-client-id";
 
 // Postgres のエラーコード
 const UNIQUE_VIOLATION = "23505";
@@ -23,21 +21,6 @@ type ActiveUsage = {
   started_at: string;
   reservations: { user_id: string | null }[];
 };
-
-async function getOrSetClientId(): Promise<string> {
-  const cookieStore = await cookies();
-  const existing = cookieStore.get(CLIENT_ID_COOKIE)?.value;
-  if (existing) return existing;
-
-  const id = crypto.randomUUID();
-  cookieStore.set(CLIENT_ID_COOKIE, id, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
-  });
-  return id;
-}
 
 function getSupabase(): SupabaseClient | null {
   const env = getSupabaseEnv();
@@ -65,7 +48,7 @@ async function fetchActiveUsages(supabase: SupabaseClient) {
 
 async function stateResponse(
   supabase: SupabaseClient,
-  clientId: string,
+  userId: string,
 ): Promise<Response> {
   const { data: usages, error } = await fetchActiveUsages(supabase);
   if (error) {
@@ -83,9 +66,9 @@ async function stateResponse(
         state: {
           isRunning: true,
           seconds: Math.max(0, Math.floor(elapsed / 1000)),
-          startedByMe: usage.user_id === clientId,
+          startedByMe: usage.user_id === userId,
           isReserved: reservedBy !== null,
-          reservedByMe: reservedBy === clientId,
+          reservedByMe: reservedBy === userId,
         },
       };
     }),
@@ -93,27 +76,14 @@ async function stateResponse(
   return Response.json(data, { headers: { "Cache-Control": "no-store" } });
 }
 
-// usages.user_id は users.id を参照しているため、先に利用者を登録しておく
-async function ensureUser(supabase: SupabaseClient, clientId: string) {
-  return supabase
-    .from("users")
-    .upsert({ id: clientId }, { onConflict: "id", ignoreDuplicates: true });
-}
-
 async function start(
   supabase: SupabaseClient,
-  clientId: string,
+  userId: string,
   machineId: number,
 ): Promise<Response | null> {
-  const { error: userError } = await ensureUser(supabase, clientId);
-  if (userError) {
-    console.error("[/api/stopwatch] 利用者の登録に失敗しました:", userError);
-    return errorResponse("開始に失敗しました。", 500);
-  }
-
   const { error } = await supabase.from("usages").insert({
     machine_id: machineId,
-    user_id: clientId,
+    user_id: userId,
     started_at: new Date().toISOString(),
   });
   // 既に使用中なら一意制約で弾かれる。そのまま現在の状態を返す
@@ -145,7 +115,7 @@ async function end(
 
 async function reserve(
   supabase: SupabaseClient,
-  clientId: string,
+  userId: string,
   machineId: number,
 ): Promise<Response | null> {
   const { data: usages, error: usageError } = await fetchActiveUsages(supabase);
@@ -158,26 +128,20 @@ async function reserve(
   if (!usage) {
     return errorResponse("使用中でない器具は予約できません。", 400);
   }
-  if (usage.user_id === clientId) {
+  if (usage.user_id === userId) {
     return errorResponse("自分が使用中の器具は予約できません。", 400);
   }
 
   const reservedBy = usage.reservations[0]?.user_id ?? null;
   if (reservedBy !== null) {
-    return reservedBy === clientId
+    return reservedBy === userId
       ? null
       : errorResponse("既に他の人が予約しています。", 409);
   }
 
-  const { error: userError } = await ensureUser(supabase, clientId);
-  if (userError) {
-    console.error("[/api/stopwatch] 利用者の登録に失敗しました:", userError);
-    return errorResponse("予約に失敗しました。", 500);
-  }
-
   const { error } = await supabase.from("reservations").insert({
     machine_id: machineId,
-    user_id: clientId,
+    user_id: userId,
     usage_id: usage.id,
   });
   // 同時に予約された場合は一意制約で弾かれる
@@ -195,15 +159,17 @@ export async function GET() {
   const supabase = getSupabase();
   if (!supabase) return errorResponse("状態の取得に失敗しました。", 500);
 
-  const clientId = await getOrSetClientId();
-  return stateResponse(supabase, clientId);
+  const userId = await getCurrentUserId();
+  if (!userId) return errorResponse("ログインしてください。", 401);
+  return stateResponse(supabase, userId);
 }
 
 export async function POST(request: Request) {
   const supabase = getSupabase();
   if (!supabase) return errorResponse("操作に失敗しました。", 500);
 
-  const clientId = await getOrSetClientId();
+  const userId = await getCurrentUserId();
+  if (!userId) return errorResponse("ログインしてください。", 401);
 
   let body: unknown;
   try {
@@ -226,16 +192,16 @@ export async function POST(request: Request) {
   let failure: Response | null;
   switch (action) {
     case "start":
-      failure = await start(supabase, clientId, machineId);
+      failure = await start(supabase, userId, machineId);
       break;
     case "reset":
       failure = await end(supabase, machineId);
       break;
     case "reserve":
-      failure = await reserve(supabase, clientId, machineId);
+      failure = await reserve(supabase, userId, machineId);
       break;
   }
   if (failure) return failure;
 
-  return stateResponse(supabase, clientId);
+  return stateResponse(supabase, userId);
 }
