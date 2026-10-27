@@ -30,8 +30,13 @@ export async function GET(request: Request) {
     // 認証コード → ログインセッションに交換
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // 成功したらトップページへ
-      return NextResponse.redirect(`${origin}/`);
+      // 成功したら、QRの読み取り先など覚えておいた戻り先へ。なければトップページへ
+      const next = cookieStore.get("login-next")?.value;
+      cookieStore.delete("login-next");
+      // 同じサイト内のパスだけを許可する（外部サイトへの転送を防ぐ）
+      const safeNext =
+        next && next.startsWith("/m/") && !next.startsWith("//") ? next : "/";
+      return NextResponse.redirect(`${origin}${safeNext}`);
     }
   }
 
