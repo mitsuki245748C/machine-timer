@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 
+import { getCurrentUserId, isAdmin } from "@/lib/supabase/auth";
 import {
   createSupabaseServerClient,
   getSupabaseEnv,
@@ -45,7 +47,21 @@ async function getMachines(): Promise<Machine[]> {
   return data ?? [];
 }
 
+// 管理者以外はトップページに戻す
+async function requireAdmin(): Promise<void> {
+  const userId = await getCurrentUserId();
+  const env = getSupabaseEnv();
+  if (!userId || env.error) redirect("/");
+
+  const supabase = createSupabaseServerClient(
+    env.data.supabaseUrl,
+    env.data.supabaseKey,
+  );
+  if (!(await isAdmin(supabase, userId))) redirect("/");
+}
+
 export default async function QrAdminPage() {
+  await requireAdmin();
   const baseUrl = await getBaseUrl();
   const machines = await getMachines();
 

@@ -71,6 +71,13 @@ export function Stopwatch() {
     await sendAction("reserve", machineId);
   }
 
+  // 管理者が、終了されずに残っている他人の利用を終了する
+  async function handleForceEndButtonClick(machine: Machine) {
+    if (!window.confirm(`${machine.name}の利用を強制終了しますか？`)) return;
+    setStatusError("");
+    await sendAction("reset", machine.id);
+  }
+
   return (
     <>
       {error && (
@@ -99,6 +106,7 @@ export function Stopwatch() {
           const isReserved = state?.isReserved ?? false;
           const reservedByMe = state?.reservedByMe ?? false;
           const canControl = !isRunning || startedByMe;
+          const canForceEnd = (data?.isAdmin ?? false) && isRunning && !startedByMe;
 
           return (
             <section
@@ -137,6 +145,15 @@ export function Stopwatch() {
                       disabled={disabled}
                     >
                       {isUpdating ? "更新中..." : "予約する"}
+                    </button>
+                  )}
+                  {canForceEnd && (
+                    <button
+                      className="machine-button-danger"
+                      onClick={() => void handleForceEndButtonClick(machine)}
+                      disabled={disabled}
+                    >
+                      強制終了
                     </button>
                   )}
                 </div>
