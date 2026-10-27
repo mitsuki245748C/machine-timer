@@ -83,6 +83,8 @@ export default function PrivacyPolicyPage() {
           <p>
             ユーザーは、自身のアカウントおよび記録の削除を希望する場合、
             下記の連絡先までお問い合わせください。
+
+            e245735@ie.u-ryukyu.ac.jp
           </p>
         </section>
 
