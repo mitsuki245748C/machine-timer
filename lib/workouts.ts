@@ -1,10 +1,6 @@
 export type Exercise = { id: number; name: string };
 export type SetInput = { weight: string; reps: string };
 export type WorkoutSet = { weight_kg: number; reps: number };
-export type LatestWorkout = {
-  performed_at: string;
-  sets: WorkoutSet[];
-};
 export type HistoryData = {
   machine: { id: number; name: string };
   usageId: number | null;
