@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useStopwatches } from "../stopwatch/use-stopwatches";
-import { isPositiveId, parseSets, type Exercise, type HistoryData, type SetInput, type LatestWorkout } from "@/lib/workouts";
+import { isPositiveId, parseSets, type Exercise, type HistoryData, type SetInput } from "@/lib/workouts";
 import styles from "./history.module.css";
 
 function formatTime(seconds: number): string {
@@ -35,11 +35,9 @@ function HistoryForm({ machineId }: { machineId: number }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [retryBody, setRetryBody] = useState<string | null>(null);
-  const [latest, setLatest] = useState<LatestWorkout | null>(null); 
   const inFlight = useRef(false);
   const addingInFlight = useRef(false);
 
-  // 器具の情報・利用状態・種目リストを読み込む。
   useEffect(() => {
     const controller = new AbortController();
     async function load() {
@@ -50,6 +48,7 @@ function HistoryForm({ machineId }: { machineId: number }) {
         const next: HistoryData = await responseData(response);
         if (controller.signal.aborted) return;
         setHistory(next);
+        // 1件だけなら選択済みにする。複数候補はユーザーが明示的に選択する。
         if (next.exercises.length === 1) setExerciseId(String(next.exercises[0].id));
         setLoadError("");
       } catch (error) {
@@ -61,25 +60,6 @@ function HistoryForm({ machineId }: { machineId: number }) {
     void load();
     return () => controller.abort();
   }, [machineId, reload]);
-
-  // 選択中の種目が変わったら、その種目の前回の記録を取りに行く。
-    useEffect(() => {
-    const controller = new AbortController();
-    async function loadLatest() {
-      if (!exerciseId) { setLatest(null); return; }
-      try {
-        const response = await fetch(`/api/records/latest?machineId=${machineId}&exerciseId=${exerciseId}`, {
-          cache: "no-store", signal: controller.signal,
-        });
-        const body = await responseData(response);
-        if (!controller.signal.aborted) setLatest(body.latest ?? null);
-      } catch {
-        if (!controller.signal.aborted) setLatest(null);
-      }
-    }
-    void loadLatest();
-    return () => controller.abort();
-  }, [machineId, exerciseId]);
 
   async function addExercise(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -197,18 +177,7 @@ function HistoryForm({ machineId }: { machineId: number }) {
           <span role="status" className={styles.srOnly}>{notice}</span>
         </section>
 
-        {latest && (
-          <section className={styles.lastWorkout} aria-label="前回の記録">
-            <h2>前回の記録（{new Date(latest.performed_at).toLocaleDateString("ja-JP")}）</h2>
-            <ul>
-              {latest.sets.map((set, index) => (
-                <li key={index}>{index + 1}セット目：{set.weight_kg}kg × {set.reps}回</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {history.usageId && <form id="woÏrkout-form" className={styles.workout} onSubmit={saveWorkout}>
+        {history.usageId && <form id="workout-form" className={styles.workout} onSubmit={saveWorkout}>
           {sets.map((set, index) => <fieldset key={index} className={styles.set} disabled={locked}>
             <legend>{index + 1}セット目</legend>
             <div className={styles.setFields}>
