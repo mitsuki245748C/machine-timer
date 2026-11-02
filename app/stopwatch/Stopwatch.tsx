@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useStopwatches } from "./use-stopwatches";
 import { useRouter } from "next/navigation";
@@ -80,6 +81,12 @@ export function Stopwatch() {
 
   return (
     <>
+      {data?.isAdmin && (
+        <nav className="admin-links" aria-label="管理者メニュー">
+          <Link href="/admin/users">ユーザー管理</Link>
+          <Link href="/admin/qr">QRコード</Link>
+        </nav>
+      )}
       {error && (
         <p role="alert" className="machine-message">
           {error}

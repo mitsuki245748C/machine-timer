@@ -113,6 +113,19 @@
   opacity: 0.7;
 }
 
+/* 管理者メニュー（トップページ） */
+.admin-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.admin-links a {
+  color: #fda4af;
+  text-decoration: underline;
+}
+
 /* 管理者の強制終了ボタン */
 .machine-button-danger {
   width: 100%;
