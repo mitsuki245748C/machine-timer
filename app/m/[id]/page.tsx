@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useStopwatches } from "../../stopwatch/use-stopwatches";
+import { AppHeader } from "@/components/AppHeader";
 
 type Machine = {
   id: number;
@@ -105,7 +106,7 @@ export default function MachineScanPage() {
 
   return (
     <div className="home">
-      <header className="banner">Machine Timer</header>
+      <AppHeader />
       <main className="machine-panel" aria-label="Machine Timer">
         {error && (
           <p role="alert" className="machine-message">

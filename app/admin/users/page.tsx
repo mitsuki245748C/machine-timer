@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AppHeader } from "@/components/AppHeader";
 import { requireAdminPage } from "@/lib/supabase/admin";
 import { UsersAdmin } from "./UsersAdmin";
 import styles from "./users.module.css";
@@ -11,7 +12,7 @@ export default async function UsersAdminPage() {
 
   return (
     <div className={styles.page} lang="ja">
-      <div className={styles.banner}>Machine Timer</div>
+      <AppHeader />
       <main className={styles.main}>
         <Link className={styles.back} href="/">‹ 器具一覧</Link>
         <h1>ユーザー管理</h1>

@@ -7,7 +7,6 @@
   color-scheme: dark;
 }
 .page * { box-sizing: border-box; }
-.banner { padding: 12px 16px; background: #be123c; text-align: center; font-weight: 700; font-size: 20px; }
 .main { width: 100%; max-width: 520px; margin: 0 auto; padding: 16px 16px max(24px, env(safe-area-inset-bottom)); }
 .main h1 { font-size: 20px; line-height: 1.4; margin: 0; overflow-wrap: anywhere; }
 .back { display: inline-flex; min-height: 44px; align-items: center; color: #fda4af; text-underline-offset: 4px; }
