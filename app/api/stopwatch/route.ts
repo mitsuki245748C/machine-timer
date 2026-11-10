@@ -1,4 +1,4 @@
-import { getCurrentUserId } from "@/lib/supabase/auth";
+import { getCurrentUserId, isAdmin } from "@/lib/supabase/auth";
 import {
   createSupabaseServerClient,
   getSupabaseEnv,
@@ -49,6 +49,7 @@ async function fetchActiveUsages(supabase: SupabaseClient) {
 async function stateResponse(
   supabase: SupabaseClient,
   userId: string,
+  admin: boolean,
 ): Promise<Response> {
   const { data: usages, error } = await fetchActiveUsages(supabase);
   if (error) {
@@ -58,6 +59,7 @@ async function stateResponse(
 
   const now = Date.now();
   const data: StopwatchResponse = {
+    isAdmin: admin,
     machines: (usages ?? []).map((usage) => {
       const reservedBy = usage.reservations[0]?.user_id ?? null;
       const elapsed = now - Date.parse(usage.started_at);
@@ -97,15 +99,37 @@ async function start(
   return null;
 }
 
+// 自分の利用は誰でも、他人の利用は管理者だけが終了できる（管理者の強制終了）
 async function end(
   supabase: SupabaseClient,
+  userId: string,
+  admin: boolean,
   machineId: number,
 ): Promise<Response | null> {
-  const { error } = await supabase
+  let query = supabase
     .from("usages")
     .update({ ended_at: new Date().toISOString() })
     .eq("machine_id", machineId)
     .is("ended_at", null);
+
+  if (!admin) {
+    const { data: usage, error: usageError } = await supabase
+      .from("usages")
+      .select("user_id")
+      .eq("machine_id", machineId)
+      .is("ended_at", null)
+      .maybeSingle<{ user_id: string | null }>();
+    if (usageError) {
+      console.error("[/api/stopwatch] 状態の取得に失敗しました:", usageError);
+      return errorResponse("終了に失敗しました。", 500);
+    }
+    if (usage && usage.user_id !== userId) {
+      return errorResponse("他の人の利用は終了できません。", 403);
+    }
+    query = query.eq("user_id", userId);
+  }
+
+  const { error } = await query;
   if (error) {
     console.error("[/api/stopwatch] 終了に失敗しました:", error);
     return errorResponse("終了に失敗しました。", 500);
@@ -161,7 +185,7 @@ export async function GET() {
 
   const userId = await getCurrentUserId();
   if (!userId) return errorResponse("ログインしてください。", 401);
-  return stateResponse(supabase, userId);
+  return stateResponse(supabase, userId, await isAdmin(supabase, userId));
 }
 
 export async function POST(request: Request) {
@@ -189,13 +213,15 @@ export async function POST(request: Request) {
     return errorResponse("マシンIDが不正です。", 400);
   }
 
+  const admin = await isAdmin(supabase, userId);
+
   let failure: Response | null;
   switch (action) {
     case "start":
       failure = await start(supabase, userId, machineId);
       break;
     case "reset":
-      failure = await end(supabase, machineId);
+      failure = await end(supabase, userId, admin, machineId);
       break;
     case "reserve":
       failure = await reserve(supabase, userId, machineId);
@@ -203,5 +229,5 @@ export async function POST(request: Request) {
   }
   if (failure) return failure;
 
-  return stateResponse(supabase, userId);
+  return stateResponse(supabase, userId, admin);
 }

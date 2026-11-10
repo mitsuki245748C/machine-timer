@@ -9,5 +9,6 @@ export type StopwatchState = {
 };
 
 export type StopwatchResponse = {
+  isAdmin: boolean;
   machines: { id: number; state: StopwatchState }[];
 };

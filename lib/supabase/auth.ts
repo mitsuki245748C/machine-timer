@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { createSupabaseServerClient } from "./server";
 
 // ログインセッション（Cookie）から、今ログインしているユーザーのIDを取得する。
 // 未ログインなら null。DBの読み書きは server.ts の Secret key のクライアントで行う。
@@ -26,4 +27,21 @@ export async function getCurrentUserId(): Promise<string | null> {
     data: { user },
   } = await supabase.auth.getUser();
   return user?.id ?? null;
+}
+
+// users.role が admin なら管理者。読み取りに失敗したときは管理者ではない扱いにする
+export async function isAdmin(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  userId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle<{ role: string }>();
+  if (error) {
+    console.error("[isAdmin] 役割の取得に失敗しました:", error);
+    return false;
+  }
+  return data?.role === "admin";
 }

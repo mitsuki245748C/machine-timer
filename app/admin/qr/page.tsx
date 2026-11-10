@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import QRCode from "qrcode";
 
+import { requireAdminPage } from "@/lib/supabase/admin";
 import {
   createSupabaseServerClient,
   getSupabaseEnv,
@@ -46,6 +47,7 @@ async function getMachines(): Promise<Machine[]> {
 }
 
 export default async function QrAdminPage() {
+  await requireAdminPage();
   const baseUrl = await getBaseUrl();
   const machines = await getMachines();
 
