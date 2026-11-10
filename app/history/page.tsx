@@ -7,6 +7,44 @@ import { useStopwatches } from "../stopwatch/use-stopwatches";
 import { isPositiveId, parseSets, type Exercise, type HistoryData, type SetInput, type LatestWorkout } from "@/lib/workouts";
 import styles from "./history.module.css";
 
+type WorkoutDraft = {
+  exerciseId: string;
+  sets: SetInput[];
+  showAdd: boolean;
+  name: string;
+  retryBody: string | null;
+  saveError: string;
+};
+
+const workoutDraftKey = (usageId: number) => `machine-timer:workout-draft:${usageId}`;
+
+function readWorkoutDraft(usageId: number): WorkoutDraft | undefined {
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(workoutDraftKey(usageId)) ?? "null");
+    // 入力途中の空欄も復元するため、値の妥当性ではなくデータの形だけを確認する。
+    if (typeof draft?.exerciseId === "string"
+      && Array.isArray(draft.sets) && draft.sets.length > 0 && draft.sets.length <= 100
+      && draft.sets.every((set: SetInput | null) => set && typeof set.weight === "string" && typeof set.reps === "string")
+      && typeof draft.showAdd === "boolean" && typeof draft.name === "string"
+      && (draft.retryBody === null || typeof draft.retryBody === "string")
+      && typeof draft.saveError === "string") return draft;
+  } catch {
+    // 壊れた下書きやストレージの利用制限で、記録画面を開けなくしない。
+  }
+}
+
+function writeWorkoutDraft(usageId: number, draft: WorkoutDraft | null) {
+  try {
+    if (draft) {
+      sessionStorage.setItem(workoutDraftKey(usageId), JSON.stringify(draft));
+    } else {
+      sessionStorage.removeItem(workoutDraftKey(usageId));
+    }
+  } catch {
+    // ストレージが使えなくても、入力や記録の保存は続けられるようにする。
+  }
+}
+
 function formatTime(seconds: number): string {
   return `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 }
@@ -50,7 +88,17 @@ function HistoryForm({ machineId }: { machineId: number }) {
         const next: HistoryData = await responseData(response);
         if (controller.signal.aborted) return;
         setHistory(next);
-        if (next.exercises.length === 1) setExerciseId(String(next.exercises[0].id));
+        const draft = next.usageId ? readWorkoutDraft(next.usageId) : undefined;
+        if (draft) {
+          setExerciseId(draft.exerciseId);
+          setSets(draft.sets);
+          setShowAdd(draft.showAdd);
+          setName(draft.name);
+          setRetryBody(draft.retryBody);
+          setSaveError(draft.saveError);
+        } else if (next.exercises.length === 1) {
+          setExerciseId(String(next.exercises[0].id));
+        }
         setLoadError("");
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -61,6 +109,11 @@ function HistoryForm({ machineId }: { machineId: number }) {
     void load();
     return () => controller.abort();
   }, [machineId, reload]);
+
+  useEffect(() => {
+    if (!history?.usageId || saving) return;
+    writeWorkoutDraft(history.usageId, { exerciseId, sets, showAdd, name, retryBody, saveError });
+  }, [history?.usageId, exerciseId, sets, showAdd, name, retryBody, saveError, saving]);
 
   // 選択中の種目が変わったら、その種目の前回の記録を取りに行く。
     useEffect(() => {
@@ -134,6 +187,7 @@ function HistoryForm({ machineId }: { machineId: number }) {
       }
       // 保存済みの応答を確認してから移動する。
       await responseData(response);
+      writeWorkoutDraft(history.usageId, null);
       router.push("/");
       router.refresh();
     } catch (error) {

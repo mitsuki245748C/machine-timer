@@ -52,13 +52,13 @@ export function Stopwatch() {
     fetchMachines();
   }, []);
 
-  async function handleStartButtonClick(machineId: number) {
+  async function handleRecordButtonClick(machineId: number, isRunning: boolean) {
     setStatusError("");
     setUpdatingMachineId(machineId);
 
     try {
-      // 失敗時のエラー表示は useStopwatches 側で行う
-      if (await sendAction("start", machineId)) {
+      // 利用中ならそのまま記録画面へ。開始時のエラーは useStopwatches 側で表示する。
+      if (isRunning || (await sendAction("start", machineId))) {
         router.push(`/history?machineId=${machineId}`);
       }
     } finally {
@@ -129,10 +129,10 @@ export function Stopwatch() {
                   {canControl ? (
                     <button
                       className="machine-button"
-                      onClick={() => void handleStartButtonClick(machine.id)}
-                      disabled={disabled || isRunning}
+                      onClick={() => void handleRecordButtonClick(machine.id, isRunning)}
+                      disabled={disabled}
                     >
-                      {isUpdating ? "更新中..." : "開始する"}
+                      {isUpdating ? "更新中..." : isRunning ? "記録に戻る" : "開始する"}
                     </button>
                   ) : reservedByMe ? (
                     <p className="machine-reserved">予約しています</p>
