@@ -6,7 +6,7 @@ const LOGIN_NEXT_COOKIE = "login-next";
 
 // ログインセッション（Cookie）を自動で更新し続けるための仕組み。
 // ページアクセスのたびに走り、ログイン状態を維持する。
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -35,7 +35,11 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublicPath = pathname === "/login" || pathname.startsWith("/auth/");
+  // /api/cron/ はログインなしで呼ばれる。認証は各 API が CRON_SECRET で行う
+  const isPublicPath =
+    pathname === "/login" ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/api/cron/");
 
   if (!user && !isPublicPath) {
     if (pathname.startsWith("/api/")) {
@@ -77,7 +81,7 @@ function redirectTo(path: string, request: NextRequest, response: NextResponse) 
   return withSessionCookies(NextResponse.redirect(url), response);
 }
 
-// この middleware を動かす対象パス。
+// この proxy を動かす対象パス。
 // 静的ファイルや画像は除外して、無駄に走らないようにする。
 export const config = {
   matcher: [

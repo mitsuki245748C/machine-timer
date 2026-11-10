@@ -1,5 +1,7 @@
 import { after } from "next/server";
 
+import { computeDeadline } from "@/lib/deadline";
+import { notifyUsageDeadline } from "@/lib/notify-deadline";
 import { notifyReservation } from "@/lib/notify-reservation";
 import { getCurrentUserId, isAdmin } from "@/lib/supabase/auth";
 import {
@@ -173,10 +175,15 @@ async function reserve(
       : errorResponse("既に他の人が予約しています。", 409);
   }
 
+  // 予約時の通知も「通知済み」として記録し、cron が同じ内容を重ねて送らないようにする
+  const now = new Date();
+  const deadline = computeDeadline(new Date(usage.started_at), now);
   const { error } = await supabase.from("reservations").insert({
     machine_id: machineId,
     user_id: userId,
     usage_id: usage.id,
+    deadline_at: deadline.toISOString(),
+    last_notified_at: now.toISOString(),
   });
   // 同時に予約された場合は一意制約で弾かれる
   if (error?.code === UNIQUE_VIOLATION) {
@@ -185,6 +192,18 @@ async function reserve(
   if (error) {
     console.error("[/api/stopwatch] 予約に失敗しました:", error);
     return errorResponse("予約に失敗しました。", 500);
+  }
+
+  // 使用中の人に、予約が入ったことをレスポンスを返した後で知らせる
+  const usedBy = usage.user_id;
+  if (usedBy) {
+    after(() =>
+      notifyUsageDeadline(supabase, "reserved", {
+        userId: usedBy,
+        machineId,
+        deadline,
+      }),
+    );
   }
   return null;
 }
