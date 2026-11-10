@@ -107,7 +107,7 @@ export default function MachineScanPage() {
   return (
     <div className="home">
       <AppHeader />
-      <main className="machine-panel" aria-label="Machine Timer">
+      <main className="machine-panel" aria-label="Perfect Muscle">
         {error && (
           <p role="alert" className="machine-message">
             {error}

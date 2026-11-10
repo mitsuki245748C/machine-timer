@@ -208,6 +208,38 @@ async function reserve(
   return null;
 }
 
+async function cancelReservation(
+  supabase: SupabaseClient,
+  userId: string,
+  machineId: number,
+): Promise<Response | null> {
+  const { data: usages, error: usageError } = await fetchActiveUsages(supabase);
+  if (usageError) {
+    console.error("[/api/stopwatch] 状態の取得に失敗しました:", usageError);
+    return errorResponse("予約のキャンセルに失敗しました。", 500);
+  }
+
+  const usage = usages?.find(({ machine_id }) => machine_id === machineId);
+  if (!usage) return null;
+
+  const reservedBy = usage.reservations[0]?.user_id ?? null;
+  if (reservedBy === null) return null;
+  if (reservedBy !== userId) {
+    return errorResponse("他の人の予約はキャンセルできません。", 403);
+  }
+
+  const { error } = await supabase
+    .from("reservations")
+    .delete()
+    .eq("usage_id", usage.id)
+    .eq("user_id", userId);
+  if (error) {
+    console.error("[/api/stopwatch] 予約のキャンセルに失敗しました:", error);
+    return errorResponse("予約のキャンセルに失敗しました。", 500);
+  }
+  return null;
+}
+
 export async function GET() {
   const supabase = getSupabase();
   if (!supabase) return errorResponse("状態の取得に失敗しました。", 500);
@@ -235,7 +267,7 @@ export async function POST(request: Request) {
   }
 
   const { action, machineId } = body as Record<string, unknown>;
-  if (action !== "start" && action !== "reset" && action !== "reserve") {
+  if (action !== "start" && action !== "reset" && action !== "reserve" && action !== "cancel") {
     return errorResponse("操作が不正です。", 400);
   }
   if (typeof machineId !== "number" || !Number.isSafeInteger(machineId) || machineId < 1) {
@@ -254,6 +286,9 @@ export async function POST(request: Request) {
       break;
     case "reserve":
       failure = await reserve(supabase, userId, machineId);
+      break;
+    case "cancel":
+      failure = await cancelReservation(supabase, userId, machineId);
       break;
   }
   if (failure) return failure;
