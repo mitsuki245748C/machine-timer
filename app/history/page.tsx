@@ -58,7 +58,7 @@ async function responseData(response: Response) {
 
 function HistoryForm({ machineId }: { machineId: number }) {
   const router = useRouter();
-  const { data: timerData, error: timerError } = useStopwatches();
+  const { data: timerData, error: timerError, sendAction } = useStopwatches();
   const timer = timerData?.machines.find(({ id }) => id === machineId)?.state;
   const [history, setHistory] = useState<HistoryData | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -71,11 +71,13 @@ function HistoryForm({ machineId }: { machineId: number }) {
   const [addError, setAddError] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [ending, setEnding] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [retryBody, setRetryBody] = useState<string | null>(null);
   const [latest, setLatest] = useState<LatestWorkout | null>(null); 
   const inFlight = useRef(false);
   const addingInFlight = useRef(false);
+  const hasSetInput = sets.some(({ weight, reps }) => weight !== "" || reps !== "");
 
   // 器具の情報・利用状態・種目リストを読み込む。
   useEffect(() => {
@@ -111,9 +113,9 @@ function HistoryForm({ machineId }: { machineId: number }) {
   }, [machineId, reload]);
 
   useEffect(() => {
-    if (!history?.usageId || saving) return;
+    if (!history?.usageId || saving || ending) return;
     writeWorkoutDraft(history.usageId, { exerciseId, sets, showAdd, name, retryBody, saveError });
-  }, [history?.usageId, exerciseId, sets, showAdd, name, retryBody, saveError, saving]);
+  }, [history?.usageId, exerciseId, sets, showAdd, name, retryBody, saveError, saving, ending]);
 
   // 選択中の種目が変わったら、その種目の前回の記録を取りに行く。
     useEffect(() => {
@@ -164,9 +166,13 @@ function HistoryForm({ machineId }: { machineId: number }) {
     }
   }
 
-  async function saveWorkout(event: React.FormEvent<HTMLFormElement>) {
+  async function finishWorkout(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inFlight.current || addingInFlight.current || !history?.usageId) return;
+    if (!retryBody && !hasSetInput) {
+      await finishWithoutSaving();
+      return;
+    }
     if (!retryBody && (!exerciseId || !parseSets(sets))) {
       setSaveError("種目を選び、全セットの重量と回数を入力してください。");
       return;
@@ -203,11 +209,26 @@ function HistoryForm({ machineId }: { machineId: number }) {
     }
   }
 
+  async function finishWithoutSaving() {
+    if (inFlight.current || addingInFlight.current || retryBody || !history?.usageId) return;
+    inFlight.current = true;
+    setEnding(true);
+    setSaveError("");
+    if (await sendAction("reset", machineId)) {
+      writeWorkoutDraft(history.usageId, null);
+      router.push("/");
+      router.refresh();
+    } else {
+      inFlight.current = false;
+      setEnding(false);
+    }
+  }
+
   function changeSet(index: number, field: keyof SetInput, value: string) {
     setSets((current) => current.map((set, i) => i === index ? { ...set, [field]: value } : set));
   }
 
-  const locked = saving || adding || retryBody !== null;
+  const locked = saving || ending || adding || retryBody !== null;
 
   return (
     <main className={styles.main}>
@@ -233,7 +254,7 @@ function HistoryForm({ machineId }: { machineId: number }) {
 
         <section className={styles.exercise} aria-label="種目">
           <label className={styles.srOnly} htmlFor="exercise">種目を選択</label>
-          <select id="exercise" form="workout-form" value={exerciseId} onChange={(event) => { setExerciseId(event.target.value); setNotice(""); }} required disabled={locked || !history.usageId || history.exercises.length === 0}>
+          <select id="exercise" form="workout-form" value={exerciseId} onChange={(event) => { setExerciseId(event.target.value); setNotice(""); }} required={hasSetInput} disabled={locked || !history.usageId || history.exercises.length === 0}>
             <option value="">{history.exercises.length ? "種目を選択" : "種目なし"}</option>
             {history.exercises.map((exercise) => <option key={exercise.id} value={exercise.id}>{exercise.name}</option>)}
           </select>
@@ -262,19 +283,19 @@ function HistoryForm({ machineId }: { machineId: number }) {
           </section>
         )}
 
-        {history.usageId && <form id="woÏrkout-form" className={styles.workout} onSubmit={saveWorkout}>
+        {history.usageId && <form id="workout-form" className={styles.workout} onSubmit={finishWorkout}>
           {sets.map((set, index) => <fieldset key={index} className={styles.set} disabled={locked}>
             <legend>{index + 1}セット目</legend>
             <div className={styles.setFields}>
-              <div><label htmlFor={`weight-${index}`}>重量（kg）</label><input id={`weight-${index}`} type="number" inputMode="decimal" min="0" max="999.99" step="0.01" required value={set.weight} onChange={(event) => changeSet(index, "weight", event.target.value)} placeholder="20" /></div>
-              <div><label htmlFor={`reps-${index}`}>回数（回）</label><input id={`reps-${index}`} type="number" inputMode="numeric" min="1" max="2147483647" step="1" required value={set.reps} onChange={(event) => changeSet(index, "reps", event.target.value)} placeholder="10" /></div>
+              <div><label htmlFor={`weight-${index}`}>重量（kg）</label><input id={`weight-${index}`} type="number" inputMode="decimal" min="0" max="999.99" step="0.01" required={hasSetInput} value={set.weight} onChange={(event) => changeSet(index, "weight", event.target.value)} placeholder="20" /></div>
+              <div><label htmlFor={`reps-${index}`}>回数（回）</label><input id={`reps-${index}`} type="number" inputMode="numeric" min="1" max="2147483647" step="1" required={hasSetInput} value={set.reps} onChange={(event) => changeSet(index, "reps", event.target.value)} placeholder="10" /></div>
             </div>
             {sets.length > 1 && <button type="button" className={styles.remove} aria-label={`${index + 1}セット目を削除`} onClick={() => setSets((current) => current.filter((_, i) => i !== index))}>削除</button>}
           </fieldset>)}
           <button type="button" className={styles.secondary} disabled={locked || sets.length >= 100} onClick={() => setSets((current) => [...current, { weight: "", reps: "" }])}>＋ セットを追加</button>
           <div className={styles.saveArea}>
             {saveError && <p role="alert" className={styles.error}>{saveError}</p>}
-            <button type="submit" className={styles.primary} disabled={saving || adding || !exerciseId}>{saving ? "保存しています…" : retryBody ? "同じ内容で再試行" : "保存して終了"}</button>
+            <button type="submit" className={styles.primary} disabled={saving || ending || adding}>{saving ? "保存しています…" : ending ? "終了しています…" : retryBody ? "同じ内容で再試行" : hasSetInput ? "保存して終了" : "終了"}</button>
           </div>
         </form>}
       </>}
