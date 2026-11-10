@@ -1,3 +1,6 @@
+import { after } from "next/server";
+
+import { notifyReservation } from "@/lib/notify-reservation";
 import { isPositiveId, parseSets } from "@/lib/workouts";
 import { workoutContext, workoutError, workoutRpcError } from "@/lib/supabase/workouts";
 
@@ -39,6 +42,9 @@ export async function POST(request: Request) {
   if (!sets) return workoutError("重量は0〜999.99kg（小数2桁まで）、回数は1以上の整数で入力してください。セットは100件まで保存できます。", 400);
   const context = await workoutContext();
   if (context.response) return context.response;
+  // 同じ内容の再送信で二重に通知しないよう、保存前に使用中だったかを確かめる
+  const { data: active } = await context.supabase
+    .from("usages").select("id").eq("id", usageId).is("ended_at", null).maybeSingle();
   const { error } = await context.supabase.rpc("save_and_finish_workout", {
     p_user_id: context.userId,
     p_machine_id: machineId,
@@ -47,5 +53,9 @@ export async function POST(request: Request) {
     p_sets: sets,
   });
   if (error) return workoutRpcError(error);
+  if (active) {
+    const { supabase, userId } = context;
+    after(() => notifyReservation(supabase, userId, usageId));
+  }
   return Response.json({ ok: true });
 }
