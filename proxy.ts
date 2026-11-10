@@ -35,7 +35,11 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublicPath = pathname === "/login" || pathname.startsWith("/auth/");
+  // /api/cron/ はログインなしで呼ばれる。認証は各 API が CRON_SECRET で行う
+  const isPublicPath =
+    pathname === "/login" ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/api/cron/");
 
   if (!user && !isPublicPath) {
     if (pathname.startsWith("/api/")) {
