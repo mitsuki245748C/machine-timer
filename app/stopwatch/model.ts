@@ -1,4 +1,4 @@
-export type StopwatchAction = "start" | "reset" | "reserve";
+export type StopwatchAction = "start" | "reset" | "reserve" | "cancel";
 
 export type StopwatchState = {
   isRunning: boolean;

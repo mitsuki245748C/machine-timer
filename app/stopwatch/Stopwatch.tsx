@@ -66,9 +66,9 @@ export function Stopwatch() {
     }
   }
 
-  async function handleReserveButtonClick(machineId: number) {
+  async function handleReservationButtonClick(machineId: number, action: "reserve" | "cancel") {
     setStatusError("");
-    await sendAction("reserve", machineId);
+    await sendAction(action, machineId);
   }
 
   // 管理者が、終了されずに残っている他人の利用を終了する
@@ -135,13 +135,22 @@ export function Stopwatch() {
                       {isUpdating ? "更新中..." : isRunning ? "記録に戻る" : "開始する"}
                     </button>
                   ) : reservedByMe ? (
-                    <p className="machine-reserved">予約しています</p>
+                    <>
+                      <p className="machine-reserved">予約しています</p>
+                      <button
+                        className="machine-button-danger"
+                        onClick={() => void handleReservationButtonClick(machine.id, "cancel")}
+                        disabled={disabled}
+                      >
+                        予約をキャンセル
+                      </button>
+                    </>
                   ) : isReserved ? (
                     <p className="machine-reserved">予約済みです</p>
                   ) : (
                     <button
                       className="machine-button-reserve"
-                      onClick={() => void handleReserveButtonClick(machine.id)}
+                      onClick={() => void handleReservationButtonClick(machine.id, "reserve")}
                       disabled={disabled}
                     >
                       {isUpdating ? "更新中..." : "予約する"}
