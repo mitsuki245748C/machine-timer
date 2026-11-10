@@ -7,8 +7,8 @@ export default function Home() {
   return (
     <div className="home">
       <AppHeader />
-      <main className="machine-panel" aria-label="Machine Timer">
-        <h1>Machine Timer</h1>
+      <main className="machine-panel" aria-label="Perfect Muscle">
+        <h1>Perfect Muscle</h1>
         <Stopwatch />
       </main>
     </div>
