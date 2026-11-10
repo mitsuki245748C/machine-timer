@@ -1,6 +1,7 @@
 "use client";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { AppHeader } from "@/components/AppHeader";
 
 export default function LoginPage() {
   async function handleGoogleLogin() {
@@ -17,7 +18,7 @@ export default function LoginPage() {
 
   return (
     <div className="home">
-      <header className="banner">Machine Timer</header>
+      <AppHeader showMenu={false} />
       <main className="machine-panel" aria-label="ログイン">
       <p style={{ color: "#a1a1aa" }}>
        Googleアカウントでログインしなさい

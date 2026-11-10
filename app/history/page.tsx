@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useStopwatches } from "../stopwatch/use-stopwatches";
@@ -310,5 +311,5 @@ function HistoryContent() {
 }
 
 export default function History() {
-  return <div className={styles.page} lang="ja"><div className={styles.banner}>Machine Timer</div><Suspense fallback={<p className={styles.main}>読み込んでいます…</p>}><HistoryContent /></Suspense></div>;
+  return <div className={styles.page} lang="ja"><AppHeader /><Suspense fallback={<p className={styles.main}>読み込んでいます…</p>}><HistoryContent /></Suspense></div>;
 }

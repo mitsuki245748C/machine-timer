@@ -106,7 +106,7 @@ export function Stopwatch() {
           const isReserved = state?.isReserved ?? false;
           const reservedByMe = state?.reservedByMe ?? false;
           const canControl = !isRunning || startedByMe;
-          const canForceEnd = (data?.isAdmin ?? false) && isRunning && !startedByMe;
+          const canForceEnd = (data?.isAdmin ?? false) && isRunning;
 
           return (
             <section

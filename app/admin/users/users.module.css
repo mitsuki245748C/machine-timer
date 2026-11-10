@@ -1,0 +1,28 @@
+.page {
+  min-height: 100dvh;
+  background: #09090b;
+  color: #fafafa;
+  font-family: Arial, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  line-height: 1.6;
+  color-scheme: dark;
+}
+.page * { box-sizing: border-box; }
+.main { width: 100%; max-width: 520px; margin: 0 auto; padding: 16px 16px max(24px, env(safe-area-inset-bottom)); }
+.main h1 { font-size: 20px; line-height: 1.4; margin: 8px 0 16px; text-align: center; }
+.back { display: inline-flex; min-height: 44px; align-items: center; color: #fda4af; text-underline-offset: 4px; }
+.list { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.user { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #52525b; border-radius: 12px; background: #18181b; }
+.user.admin { border-color: #be123c; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.name { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.badge { flex-shrink: 0; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #27272a; color: #d4d4d8; }
+.admin .badge { background: #4c0519; color: #fda4af; }
+.detail { margin: 0; color: #bcbcc4; font-size: 13px; overflow-wrap: anywhere; }
+.me { color: #fda4af; font-size: 13px; margin: 0; }
+.main button { font-family: inherit; font-size: 15px; line-height: 1.5; min-height: 44px; border-radius: 8px; cursor: pointer; padding: 8px 12px; }
+.main button:disabled { opacity: 0.6; cursor: not-allowed; }
+.main :is(button, a):focus-visible { outline: 3px solid #fda4af; outline-offset: 3px; }
+.promote { width: 100%; border: 1px solid #be123c; color: #fff; background: #be123c; font-weight: 700; }
+.demote { width: 100%; border: 1px solid #71717a; color: #fafafa; background: #27272a; }
+.muted { color: #bcbcc4; font-size: 14px; }
+.error { color: #fecdd3; font-size: 14px; padding: 12px 16px; border: 1px solid #9f1239; border-radius: 8px; margin: 0 0 16px; overflow-wrap: anywhere; }

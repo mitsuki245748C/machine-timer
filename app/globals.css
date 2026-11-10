@@ -8,6 +8,57 @@
   background: #000000;
 }
 
+/* 全画面共通のヘッダー（components/AppHeader.tsx） */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 52px;
+  padding: 0 1rem;
+  background: #e11d48;
+  color: #ffffff;
+}
+
+.app-header-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: #ffffff;
+}
+
+.app-header-menu {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.app-header-menu a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+:is(.app-header-home, .app-header-menu a):hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+:is(.app-header-home, .app-header-menu a):focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* プライバシーポリシーのページで使用 */
 .banner {
   background: #e11d48;
   color: #ffffff;

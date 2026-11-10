@@ -1,3 +1,6 @@
+import { after } from "next/server";
+
+import { notifyReservation } from "@/lib/notify-reservation";
 import { getCurrentUserId, isAdmin } from "@/lib/supabase/auth";
 import {
   createSupabaseServerClient,
@@ -129,10 +132,17 @@ async function end(
     query = query.eq("user_id", userId);
   }
 
-  const { error } = await query;
+  const { data: ended, error } = await query
+    .select("id")
+    .overrideTypes<{ id: number }[]>();
   if (error) {
     console.error("[/api/stopwatch] 終了に失敗しました:", error);
     return errorResponse("終了に失敗しました。", 500);
+  }
+
+  // 実際に終了した利用があるときだけ、レスポンスを返した後で予約者に知らせる
+  for (const { id } of ended ?? []) {
+    after(() => notifyReservation(supabase, userId, id));
   }
   return null;
 }
