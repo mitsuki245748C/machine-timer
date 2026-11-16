@@ -1,3 +1,4 @@
+import { RESERVATION_HOLD_SECONDS } from "@/app/stopwatch/model";
 import { sendMail } from "@/lib/mail";
 import type { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -41,7 +42,12 @@ export async function notifyReservation(
     await sendMail({
       to: email,
       subject: `「${name}」が空きました`,
-      text: `予約していた「${name}」の利用が終了しました。\n${siteUrl}/m/${reservation.machine_id}\n`,
+      text:
+        `予約していた「${name}」の利用が終了しました。\n` +
+        `今から${RESERVATION_HOLD_SECONDS / 60}分間は、あなただけが開始できます。` +
+        `時間を過ぎると、ほかの人も使えるようになります。\n` +
+        `器具の QR コードを読み取るか、次のリンクから開始してください。\n` +
+        `${siteUrl}/m/${reservation.machine_id}\n`,
     });
   } catch (err) {
     console.error("[notify] 予約者への通知に失敗しました:", err);

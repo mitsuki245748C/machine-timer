@@ -26,6 +26,10 @@ export default function MachineScanPage() {
   const [failedAction, setFailedAction] = useState<"start" | "reserve" | null>(
     null,
   );
+  // 読み取った器具を使えなかった理由（ほかの人が予約済み / 予約した人の順番）
+  const [blockedReason, setBlockedReason] = useState<"reserved" | "held" | null>(
+    null,
+  );
   const autoHandled = useRef(false);
 
   useEffect(() => {
@@ -58,6 +62,9 @@ export default function MachineScanPage() {
   const isRunning = state?.isRunning ?? false;
   const startedByMe = state?.startedByMe ?? false;
   const isReserved = state?.isReserved ?? false;
+  const reservedByMe = state?.reservedByMe ?? false;
+  const hold = state?.hold ?? null;
+  const heldForOthers = !isRunning && hold !== null && !hold.forMe;
   const disabled = pending || isStarting;
 
   async function handleStart() {
@@ -78,22 +85,25 @@ export default function MachineScanPage() {
   }
 
   // QRを読み取って開いたら、状態に応じて自動で振り分ける
-  //  空き → 開始して記録画面へ / 自分が使用中 → 記録画面へ
-  //  他人が使用中 → 予約してホームへ
+  //  空き（または自分の順番）→ 開始して記録画面へ / 自分が使用中 → 記録画面へ
+  //  他人が使用中 → 予約してホームへ（ほかの人が予約済みなら理由を表示）
+  //  予約した人の順番 → 理由を表示
   useEffect(() => {
     if (!isValidId || !machine || !data || autoHandled.current) return;
+    autoHandled.current = true;
 
-    if (!isRunning) {
-      autoHandled.current = true;
+    if (heldForOthers) {
+      queueMicrotask(() => setBlockedReason("held"));
+    } else if (!isRunning) {
       queueMicrotask(() => void handleStart());
     } else if (startedByMe) {
-      autoHandled.current = true;
       router.replace(`/history?machineId=${machineId}`);
+    } else if (isReserved && !reservedByMe) {
+      queueMicrotask(() => setBlockedReason("reserved"));
     } else {
-      autoHandled.current = true;
       void (async () => {
-        // すでに予約があるか、予約に成功したときだけホームへ戻る
-        if (isReserved || (await sendAction("reserve", machineId))) {
+        // 自分がすでに予約しているか、予約に成功したときだけホームへ戻る
+        if (reservedByMe || (await sendAction("reserve", machineId))) {
           router.replace("/");
         } else {
           setFailedAction("reserve");
@@ -135,7 +145,30 @@ export default function MachineScanPage() {
         {machine && (
           <section className="machine" aria-labelledby="machine-name">
             <h2 id="machine-name">{machine.name}</h2>
-            {failedAction === "start" || statusError ? (
+            {blockedReason === "reserved" ? (
+              <>
+                <p className="machine-message machine-message-error">
+                  この器具は、ほかの人がすでに予約しているため、予約できませんでした。
+                </p>
+                <button className="machine-button" onClick={() => router.replace("/")}>
+                  器具一覧へ
+                </button>
+              </>
+            ) : blockedReason === "held" && heldForOthers ? (
+              <>
+                <p className="machine-message machine-message-error">
+                  この器具は、予約した人の順番のため、まだ使えません。
+                </p>
+                <p className="machine-message">
+                  あと{Math.floor(hold.secondsLeft / 60)}分
+                  {(hold.secondsLeft % 60).toString().padStart(2, "0")}
+                  秒で、誰でも使えるようになります。
+                </p>
+                <button className="machine-button" onClick={() => router.replace("/")}>
+                  器具一覧へ
+                </button>
+              </>
+            ) : failedAction === "start" || statusError || blockedReason === "held" ? (
               <button
                 className="machine-button"
                 onClick={() => void handleStart()}
