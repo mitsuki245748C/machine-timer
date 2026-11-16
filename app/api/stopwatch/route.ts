@@ -1,5 +1,7 @@
 import { after } from "next/server";
 
+import { computeDeadline } from "@/lib/deadline";
+import { notifyUsageDeadline } from "@/lib/notify-deadline";
 import { notifyReservation } from "@/lib/notify-reservation";
 import { getCurrentUserId, isAdmin } from "@/lib/supabase/auth";
 import {
@@ -173,10 +175,15 @@ async function reserve(
       : errorResponse("既に他の人が予約しています。", 409);
   }
 
+  // 予約時の通知も「通知済み」として記録し、cron が同じ内容を重ねて送らないようにする
+  const now = new Date();
+  const deadline = computeDeadline(new Date(usage.started_at), now);
   const { error } = await supabase.from("reservations").insert({
     machine_id: machineId,
     user_id: userId,
     usage_id: usage.id,
+    deadline_at: deadline.toISOString(),
+    last_notified_at: now.toISOString(),
   });
   // 同時に予約された場合は一意制約で弾かれる
   if (error?.code === UNIQUE_VIOLATION) {
@@ -185,6 +192,50 @@ async function reserve(
   if (error) {
     console.error("[/api/stopwatch] 予約に失敗しました:", error);
     return errorResponse("予約に失敗しました。", 500);
+  }
+
+  // 使用中の人に、予約が入ったことをレスポンスを返した後で知らせる
+  const usedBy = usage.user_id;
+  if (usedBy) {
+    after(() =>
+      notifyUsageDeadline(supabase, "reserved", {
+        userId: usedBy,
+        machineId,
+        deadline,
+      }),
+    );
+  }
+  return null;
+}
+
+async function cancelReservation(
+  supabase: SupabaseClient,
+  userId: string,
+  machineId: number,
+): Promise<Response | null> {
+  const { data: usages, error: usageError } = await fetchActiveUsages(supabase);
+  if (usageError) {
+    console.error("[/api/stopwatch] 状態の取得に失敗しました:", usageError);
+    return errorResponse("予約のキャンセルに失敗しました。", 500);
+  }
+
+  const usage = usages?.find(({ machine_id }) => machine_id === machineId);
+  if (!usage) return null;
+
+  const reservedBy = usage.reservations[0]?.user_id ?? null;
+  if (reservedBy === null) return null;
+  if (reservedBy !== userId) {
+    return errorResponse("他の人の予約はキャンセルできません。", 403);
+  }
+
+  const { error } = await supabase
+    .from("reservations")
+    .delete()
+    .eq("usage_id", usage.id)
+    .eq("user_id", userId);
+  if (error) {
+    console.error("[/api/stopwatch] 予約のキャンセルに失敗しました:", error);
+    return errorResponse("予約のキャンセルに失敗しました。", 500);
   }
   return null;
 }
@@ -216,7 +267,7 @@ export async function POST(request: Request) {
   }
 
   const { action, machineId } = body as Record<string, unknown>;
-  if (action !== "start" && action !== "reset" && action !== "reserve") {
+  if (action !== "start" && action !== "reset" && action !== "reserve" && action !== "cancel") {
     return errorResponse("操作が不正です。", 400);
   }
   if (typeof machineId !== "number" || !Number.isSafeInteger(machineId) || machineId < 1) {
@@ -235,6 +286,9 @@ export async function POST(request: Request) {
       break;
     case "reserve":
       failure = await reserve(supabase, userId, machineId);
+      break;
+    case "cancel":
+      failure = await cancelReservation(supabase, userId, machineId);
       break;
   }
   if (failure) return failure;

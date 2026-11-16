@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Machine Timer",
+  title: "Perfect Muscle",
   description: "ジムの器具の使用時間管理アプリケーション",
 };
 
