@@ -8,7 +8,10 @@ import {
   createSupabaseServerClient,
   getSupabaseEnv,
 } from "@/lib/supabase/server";
-import type { StopwatchResponse } from "../../stopwatch/model";
+import {
+  RESERVATION_HOLD_SECONDS,
+  type StopwatchResponse,
+} from "../../stopwatch/model";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +27,20 @@ type ActiveUsage = {
   machine_id: number;
   user_id: string | null;
   started_at: string;
+  reservations: { user_id: string | null }[];
+};
+
+// 予約が付いた利用が終わった直後の器具。until まではその予約者だけが開始できる
+type Hold = {
+  usageId: number;
+  userId: string;
+  until: number;
+};
+
+type EndedUsage = {
+  id: number;
+  machine_id: number;
+  ended_at: string;
   reservations: { user_id: string | null }[];
 };
 
@@ -51,34 +68,93 @@ async function fetchActiveUsages(supabase: SupabaseClient) {
     .overrideTypes<ActiveUsage[]>();
 }
 
+// 直近に終わった利用のうち、器具ごとに最後の1件を見て、予約が付いていれば予約者の順番とする。
+// 予約者やほかの人がその後に使い始めていれば、その利用のほうが新しいので順番は終わっている
+async function fetchHolds(supabase: SupabaseClient, now: number) {
+  const since = new Date(now - RESERVATION_HOLD_SECONDS * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("usages")
+    .select("id, machine_id, ended_at, reservations(user_id)")
+    .gt("ended_at", since)
+    .order("ended_at", { ascending: false })
+    .overrideTypes<EndedUsage[]>();
+  if (error) return { holds: null, error };
+
+  const holds = new Map<number, Hold>();
+  const seen = new Set<number>();
+  for (const usage of data ?? []) {
+    if (seen.has(usage.machine_id)) continue;
+    seen.add(usage.machine_id);
+    const reservedBy = usage.reservations[0]?.user_id ?? null;
+    if (reservedBy) {
+      holds.set(usage.machine_id, {
+        usageId: usage.id,
+        userId: reservedBy,
+        until: Date.parse(usage.ended_at) + RESERVATION_HOLD_SECONDS * 1000,
+      });
+    }
+  }
+  return { holds, error: null };
+}
+
+function secondsLeft(hold: Hold, now: number): number {
+  return Math.max(1, Math.ceil((hold.until - now) / 1000));
+}
+
 async function stateResponse(
   supabase: SupabaseClient,
   userId: string,
   admin: boolean,
 ): Promise<Response> {
-  const { data: usages, error } = await fetchActiveUsages(supabase);
-  if (error) {
-    console.error("[/api/stopwatch] 状態の取得に失敗しました:", error);
+  const now = Date.now();
+  const [{ data: usages, error }, { holds, error: holdError }] = await Promise.all([
+    fetchActiveUsages(supabase),
+    fetchHolds(supabase, now),
+  ]);
+  if (error || holdError || !holds) {
+    console.error("[/api/stopwatch] 状態の取得に失敗しました:", error ?? holdError);
     return errorResponse("状態の取得に失敗しました。", 500);
   }
 
-  const now = Date.now();
+  const activeMachineIds = new Set((usages ?? []).map(({ machine_id }) => machine_id));
+  // 使用中の器具は順番待ちではないので除く
+  const idleHolds = [...holds].filter(([machineId]) => !activeMachineIds.has(machineId));
+  const myReservation =
+    (usages ?? []).find((usage) => usage.reservations[0]?.user_id === userId)?.machine_id ??
+    idleHolds.find(([, hold]) => hold.userId === userId)?.[0] ??
+    null;
+
   const data: StopwatchResponse = {
     isAdmin: admin,
-    machines: (usages ?? []).map((usage) => {
-      const reservedBy = usage.reservations[0]?.user_id ?? null;
-      const elapsed = now - Date.parse(usage.started_at);
-      return {
-        id: usage.machine_id,
+    myReservationMachineId: myReservation,
+    machines: [
+      ...(usages ?? []).map((usage) => {
+        const reservedBy = usage.reservations[0]?.user_id ?? null;
+        const elapsed = now - Date.parse(usage.started_at);
+        return {
+          id: usage.machine_id,
+          state: {
+            isRunning: true,
+            seconds: Math.max(0, Math.floor(elapsed / 1000)),
+            startedByMe: usage.user_id === userId,
+            isReserved: reservedBy !== null,
+            reservedByMe: reservedBy === userId,
+            hold: null,
+          },
+        };
+      }),
+      ...idleHolds.map(([machineId, hold]) => ({
+        id: machineId,
         state: {
-          isRunning: true,
-          seconds: Math.max(0, Math.floor(elapsed / 1000)),
-          startedByMe: usage.user_id === userId,
-          isReserved: reservedBy !== null,
-          reservedByMe: reservedBy === userId,
+          isRunning: false,
+          seconds: 0,
+          startedByMe: false,
+          isReserved: true,
+          reservedByMe: hold.userId === userId,
+          hold: { forMe: hold.userId === userId, secondsLeft: secondsLeft(hold, now) },
         },
-      };
-    }),
+      })),
+    ],
   };
   return Response.json(data, { headers: { "Cache-Control": "no-store" } });
 }
@@ -88,6 +164,21 @@ async function start(
   userId: string,
   machineId: number,
 ): Promise<Response | null> {
+  const now = Date.now();
+  const { holds, error: holdError } = await fetchHolds(supabase, now);
+  if (holdError || !holds) {
+    console.error("[/api/stopwatch] 予約の確認に失敗しました:", holdError);
+    return errorResponse("開始に失敗しました。", 500);
+  }
+  const hold = holds.get(machineId);
+  if (hold && hold.userId !== userId) {
+    const left = secondsLeft(hold, now);
+    return errorResponse(
+      `予約した人の順番です。あと${Math.floor(left / 60)}分${left % 60}秒で使えるようになります。`,
+      409,
+    );
+  }
+
   const { error } = await supabase.from("usages").insert({
     machine_id: machineId,
     user_id: userId,
@@ -172,7 +263,26 @@ async function reserve(
   if (reservedBy !== null) {
     return reservedBy === userId
       ? null
-      : errorResponse("既に他の人が予約しています。", 409);
+      : errorResponse("ほかの人がすでに予約しているため、予約できませんでした。", 409);
+  }
+
+  // 予約は1人1つまで（使用中の器具の予約と、順番が来ている器具を合わせて数える）
+  const { holds, error: holdError } = await fetchHolds(supabase, Date.now());
+  if (holdError || !holds) {
+    console.error("[/api/stopwatch] 予約の確認に失敗しました:", holdError);
+    return errorResponse("予約に失敗しました。", 500);
+  }
+  const activeMachineIds = new Set((usages ?? []).map(({ machine_id }) => machine_id));
+  const hasOtherReservation =
+    (usages ?? []).some((other) => other.reservations[0]?.user_id === userId) ||
+    [...holds].some(
+      ([otherMachineId, hold]) => hold.userId === userId && !activeMachineIds.has(otherMachineId),
+    );
+  if (hasOtherReservation) {
+    return errorResponse(
+      "予約は1人1つまでです。ほかの器具の予約をキャンセルしてから予約してください。",
+      409,
+    );
   }
 
   // 予約時の通知も「通知済み」として記録し、cron が同じ内容を重ねて送らないようにする
@@ -187,7 +297,7 @@ async function reserve(
   });
   // 同時に予約された場合は一意制約で弾かれる
   if (error?.code === UNIQUE_VIOLATION) {
-    return errorResponse("既に他の人が予約しています。", 409);
+    return errorResponse("ほかの人がすでに予約しているため、予約できませんでした。", 409);
   }
   if (error) {
     console.error("[/api/stopwatch] 予約に失敗しました:", error);
@@ -220,10 +330,22 @@ async function cancelReservation(
   }
 
   const usage = usages?.find(({ machine_id }) => machine_id === machineId);
-  if (!usage) return null;
+  let usageId = usage?.id;
+  let reservedBy = usage?.reservations[0]?.user_id ?? null;
 
-  const reservedBy = usage.reservations[0]?.user_id ?? null;
-  if (reservedBy === null) return null;
+  // 空いていて自分の順番の器具も、キャンセルすればすぐにほかの人が使える
+  if (!usage) {
+    const { holds, error: holdError } = await fetchHolds(supabase, Date.now());
+    if (holdError || !holds) {
+      console.error("[/api/stopwatch] 予約の確認に失敗しました:", holdError);
+      return errorResponse("予約のキャンセルに失敗しました。", 500);
+    }
+    const hold = holds.get(machineId);
+    usageId = hold?.usageId;
+    reservedBy = hold?.userId ?? null;
+  }
+
+  if (usageId === undefined || reservedBy === null) return null;
   if (reservedBy !== userId) {
     return errorResponse("他の人の予約はキャンセルできません。", 403);
   }
@@ -231,7 +353,7 @@ async function cancelReservation(
   const { error } = await supabase
     .from("reservations")
     .delete()
-    .eq("usage_id", usage.id)
+    .eq("usage_id", usageId)
     .eq("user_id", userId);
   if (error) {
     console.error("[/api/stopwatch] 予約のキャンセルに失敗しました:", error);
