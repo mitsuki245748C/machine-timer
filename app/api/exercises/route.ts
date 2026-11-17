@@ -1,4 +1,4 @@
-import { isPositiveId } from "@/lib/workouts";
+import { isBodyPart, isPositiveId } from "@/lib/workouts";
 import { workoutContext, workoutError, workoutRpcError } from "@/lib/supabase/workouts";
 
 export async function POST(request: Request) {
@@ -8,12 +8,16 @@ export async function POST(request: Request) {
   }
   const name = body.name.trim();
   if (!name || name.length > 100) return workoutError("種目名は1〜100文字で入力してください。", 400);
+  // 部位は新しく自作種目を作るときだけ使われる。省略時は「その他」
+  const bodyPart = body.bodyPart ?? "other";
+  if (!isBodyPart(bodyPart)) return workoutError("部位を選択してください。", 400);
   const context = await workoutContext();
   if (context.response) return context.response;
   const { data, error } = await context.supabase.rpc("add_my_machine_exercise", {
     p_user_id: context.userId,
     p_machine_id: body.machineId,
     p_name: name,
+    p_body_part: bodyPart,
   });
   if (error) return workoutRpcError(error);
   return Response.json({ exercise: data }, { headers: { "Cache-Control": "no-store" } });

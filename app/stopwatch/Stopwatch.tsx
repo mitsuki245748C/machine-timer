@@ -1,5 +1,7 @@
 "use client";
 
+import { ClipboardListIcon } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useStopwatches } from "./use-stopwatches";
 import { useRouter } from "next/navigation";
@@ -125,6 +127,15 @@ export function Stopwatch() {
               className="machine"
               aria-labelledby={`machine-${machine.id}`}
             >
+              {/* この器具で行った種目の記録へ（記録画面の検索に器具名を入れて開く） */}
+              <Link
+                href={`/records?q=${encodeURIComponent(machine.name)}`}
+                className="machine-records-link"
+                aria-label={`${machine.name}の記録を見る`}
+              >
+                <ClipboardListIcon aria-hidden size={16} />
+                記録
+              </Link>
               <h2 id={`machine-${machine.id}`}>{machine.name}</h2>
               <p>
                 Status:{" "}
