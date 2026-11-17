@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useStopwatches } from "../stopwatch/use-stopwatches";
-import { isPositiveId, parseSets, type Exercise, type HistoryData, type SetInput, type LatestWorkout } from "@/lib/workouts";
+import { isPositiveId, parseSets, type Exercise, type HistoryData, type SetInput, type LatestWorkout, type WorkoutSession } from "@/lib/workouts";
 import styles from "./history.module.css";
 
 type WorkoutDraft = {
@@ -76,6 +76,8 @@ function HistoryForm({ machineId }: { machineId: number }) {
   const [saveError, setSaveError] = useState("");
   const [retryBody, setRetryBody] = useState<string | null>(null);
   const [latest, setLatest] = useState<LatestWorkout | null>(null); 
+  const [history2, setHistory2] = useState<WorkoutSession[] | null>(null); // 全履歴
+  const [showHistory, setShowHistory] = useState(false); // モーダル開閉
   const inFlight = useRef(false);
   const addingInFlight = useRef(false);
   const hasSetInput = sets.some(({ weight, reps }) => weight !== "" || reps !== "");
@@ -229,6 +231,22 @@ function HistoryForm({ machineId }: { machineId: number }) {
     setSets((current) => current.map((set, i) => i === index ? { ...set, [field]: value } : set));
   }
 
+  // 履歴ボタンを押したら、その種目の全履歴を取ってモーダルを開く。
+  async function openHistory() {
+    if (!exerciseId) return;
+    setShowHistory(true);
+    setHistory2(null);
+    try {
+      const response = await fetch(`/api/records/history?machineId=${machineId}&exerciseId=${exerciseId}`, {
+        cache: "no-store",
+      });
+      const body = await responseData(response);
+      setHistory2(body.history ?? []);
+    } catch {
+      setHistory2([]);
+    }
+  }
+
   const locked = saving || ending || adding || retryBody !== null;
 
   return (
@@ -273,15 +291,45 @@ function HistoryForm({ machineId }: { machineId: number }) {
           <span role="status" className={styles.srOnly}>{notice}</span>
         </section>
 
-        {latest && (
+                {latest && (
           <section className={styles.lastWorkout} aria-label="前回の記録">
-            <h2>前回の記録（{new Date(latest.performed_at).toLocaleDateString("ja-JP")}）</h2>
+            <div className={styles.lastWorkoutHead}>
+              <h2>前回の記録（{new Date(latest.performed_at).toLocaleDateString("ja-JP")}）</h2>
+              <button type="button" className={styles.historyButton} onClick={() => openHistory()}>
+                履歴
+              </button>
+            </div>
             <ul>
               {latest.sets.map((set, index) => (
                 <li key={index}>{index + 1}セット目：{set.weight_kg}kg × {set.reps}回</li>
               ))}
             </ul>
           </section>
+        )}
+
+        {showHistory && (
+          <div className={styles.modalOverlay} onClick={() => setShowHistory(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHead}>
+                <h2>記録の履歴</h2>
+                <button type="button" className={styles.modalClose} aria-label="閉じる" onClick={() => setShowHistory(false)}>✕</button>
+              </div>
+              <div className={styles.modalBody}>
+                {history2 === null && <p>読み込んでいます…</p>}
+                {history2 !== null && history2.length === 0 && <p>まだ記録がありません。</p>}
+                {history2 !== null && history2.map((session, i) => (
+                  <div key={i} className={styles.historySession}>
+                    <h3>{new Date(session.performed_at).toLocaleDateString("ja-JP")}</h3>
+                    <ul>
+                      {session.sets.map((set, j) => (
+                        <li key={j}>{j + 1}セット目：{set.weight_kg}kg × {set.reps}回</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
         {history.usageId && <form id="workout-form" className={styles.workout} onSubmit={finishWorkout}>
