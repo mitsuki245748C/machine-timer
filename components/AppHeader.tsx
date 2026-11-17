@@ -4,12 +4,14 @@ import { QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ThemeSwitcher } from "./ThemeSwitcher";
+
 type Props = {
   // ログイン前の画面では管理者かどうかを問い合わせない
   showMenu?: boolean;
 };
 
-// 全画面共通の赤いヘッダー。左のアイコンでトップへ戻り、管理者には右に管理者メニューを出す
+// 全画面共通のヘッダー。左のアイコンでトップへ戻り、右に配色の切り替えと（管理者には）管理者メニューを出す
 export function AppHeader({ showMenu = true }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -30,18 +32,21 @@ export function AppHeader({ showMenu = true }: Props) {
       <Link href="/" className="app-header-home" aria-label="器具一覧へ">
         <TimerIcon aria-hidden size={24} />
       </Link>
-      {isAdmin && (
-        <nav className="app-header-menu" aria-label="管理者メニュー">
-          <Link href="/admin/users">
-            <UsersIcon aria-hidden size={18} />
-            ユーザー
-          </Link>
-          <Link href="/admin/qr">
-            <QrCodeIcon aria-hidden size={18} />
-            QR
-          </Link>
-        </nav>
-      )}
+      <div className="app-header-actions">
+        {isAdmin && (
+          <nav className="app-header-menu" aria-label="管理者メニュー">
+            <Link href="/admin/users">
+              <UsersIcon aria-hidden size={18} />
+              ユーザー
+            </Link>
+            <Link href="/admin/qr">
+              <QrCodeIcon aria-hidden size={18} />
+              QR
+            </Link>
+          </nav>
+        )}
+        <ThemeSwitcher />
+      </div>
     </header>
   );
 }
