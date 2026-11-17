@@ -1,6 +1,6 @@
 "use client";
 
-import { QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
+import { ClipboardListIcon, QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -9,7 +9,7 @@ type Props = {
   showMenu?: boolean;
 };
 
-// 全画面共通の赤いヘッダー。左のアイコンでトップへ戻り、管理者には右に管理者メニューを出す
+// 全画面共通の赤いヘッダー。左のアイコンでトップへ戻り、右に記録画面へのリンク（管理者には管理者メニューも）を出す
 export function AppHeader({ showMenu = true }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -30,16 +30,22 @@ export function AppHeader({ showMenu = true }: Props) {
       <Link href="/" className="app-header-home" aria-label="器具一覧へ">
         <TimerIcon aria-hidden size={24} />
       </Link>
-      {isAdmin && (
-        <nav className="app-header-menu" aria-label="管理者メニュー">
-          <Link href="/admin/users">
-            <UsersIcon aria-hidden size={18} />
-            ユーザー
+      {showMenu && (
+        <nav className="app-header-menu" aria-label="メニュー">
+          <Link href="/records">
+            <ClipboardListIcon aria-hidden size={18} />
+            記録
           </Link>
-          <Link href="/admin/qr">
-            <QrCodeIcon aria-hidden size={18} />
-            QR
-          </Link>
+          {isAdmin && <>
+            <Link href="/admin/users">
+              <UsersIcon aria-hidden size={18} />
+              ユーザー
+            </Link>
+            <Link href="/admin/qr">
+              <QrCodeIcon aria-hidden size={18} />
+              QR
+            </Link>
+          </>}
         </nav>
       )}
     </header>
