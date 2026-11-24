@@ -62,6 +62,9 @@
   --login-bg: #27272a;
   --login-border: #3f3f46;
   --login-text: #ffffff;
+
+  --records-link-hover: #27272a;
+  --records-link-color: #f35858;
 }
 
 /* ライトブルー（白地に薄い青） */
@@ -122,6 +125,9 @@
   --login-bg: #7dd3fc;
   --login-border: #7dd3fc;
   --login-text: #0f172a;
+
+  --records-link-hover: #bae6fd;
+  --records-link-color: #070707;
 }
 
 /* ライトオレンジ（light-blue の水色をオレンジに置き換え。白地＋オレンジ） */
@@ -134,19 +140,19 @@
   --bg-modal: #ffffff;
   --bg-input: #ffffff;
   --bg-secondary-button: #f1f5f9;
-  --overlay: rgba(0, 0, 0, 0.6);
+  --overlay: rgba(250, 121, 41, 0.6);
 
-  --header-bg: #ee6a17;
+  --header-bg: #fc8428;
   --on-header: #0f172a;
   --header-pill: rgba(15, 23, 42, 0.08);
   --header-pill-hover: rgba(15, 23, 42, 0.16);
 
-  --accent: #ee6a17;
+  --accent: #f97b2c;
   --accent-hover: #ee6a17;
   --on-accent: #0f172a;
-  --accent-text: #b45309;
+  --accent-text: #fc8428;
   --accent-soft-bg: #ffedd5;
-  --accent-soft-text: #b45309;
+  --accent-soft-text: #fc8428;
 
   --primary-bg: #b45309;
   --primary-bg-hover: #b45309;
@@ -182,6 +188,9 @@
   --login-bg: #e69f00;
   --login-border: #e69f00;
   --login-text: #0f172a;
+
+  --records-link-hover: #fed7aa;
+  --records-link-color: #070707;
 }
 
 :root[data-theme="colorful"] {
@@ -212,7 +221,7 @@
   --primary-text: #0f172a;
 
   --reserve-bg: #dbb0e0;
-  --reserve-text: #1c1917;
+  --reserve-text: #ff0000;
   --reserved-text: #b45309;
 
   --danger-text: #be123c;
