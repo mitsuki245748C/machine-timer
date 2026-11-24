@@ -52,7 +52,7 @@ export function AppHeader({ showMenu = true }: Props) {
   return (
     <header className="app-header">
       <Link href="/" className="app-header-home" aria-label="器具一覧へ">
-        <TimerIcon aria-hidden size={24} />
+        Perfect Muscle
       </Link>
       <div className="app-header-actions">
         {showMenu && (
