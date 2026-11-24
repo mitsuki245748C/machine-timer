@@ -22,6 +22,7 @@
 
 .app-header-home {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 40px;
@@ -32,30 +33,50 @@
 
 .app-header-menu {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
+  padding: 0.5rem 0;
 }
 
-.app-header-menu a {
+.app-header-menu :is(a, button) {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   min-height: 36px;
   padding: 0 0.75rem;
+  border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
+  font-family: inherit;
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-:is(.app-header-home, .app-header-menu a):hover {
+:is(.app-header-home, .app-header-menu a, .app-header-menu button:enabled):hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
-:is(.app-header-home, .app-header-menu a):focus-visible {
+:is(.app-header-home, .app-header-menu a, .app-header-menu button):focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
+}
+
+.app-header-menu button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.app-header-error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  text-align: right;
 }
 
 /* プライバシーポリシーのページで使用 */

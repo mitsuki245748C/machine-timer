@@ -1,17 +1,20 @@
 "use client";
 
-import { QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
+import { LogOutIcon, QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Props = {
-  // ログイン前の画面では管理者かどうかを問い合わせない
+  // ログイン前の画面ではメニューを表示せず、管理者かどうかも問い合わせない
   showMenu?: boolean;
 };
 
-// 全画面共通の赤いヘッダー。左のアイコンでトップへ戻り、管理者には右に管理者メニューを出す
+// 共通の赤いヘッダー。右にログアウトと、管理者向けのリンクを出す
 export function AppHeader({ showMenu = true }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!showMenu) return;
@@ -20,26 +23,54 @@ export function AppHeader({ showMenu = true }: Props) {
       .then((response) => (response.ok ? response.json() : null))
       .then((body) => setIsAdmin(body?.isAdmin === true))
       .catch(() => {
-        // 取得できなければメニューを出さないだけ
+        // 取得できなければ管理者向けのリンクを出さないだけ
       });
     return () => controller.abort();
   }, [showMenu]);
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setLogoutError(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      if (error) {
+        // 通信に失敗しても、このブラウザのセッションは消去済みの場合がある。
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || data.session) throw error;
+      }
+      window.location.replace("/login");
+    } catch {
+      setLogoutError("ログアウトできませんでした。もう一度お試しください。");
+      setIsLoggingOut(false);
+    }
+  }
 
   return (
     <header className="app-header">
       <Link href="/" className="app-header-home" aria-label="器具一覧へ">
         <TimerIcon aria-hidden size={24} />
       </Link>
-      {isAdmin && (
-        <nav className="app-header-menu" aria-label="管理者メニュー">
-          <Link href="/admin/users">
-            <UsersIcon aria-hidden size={18} />
-            ユーザー
-          </Link>
-          <Link href="/admin/qr">
-            <QrCodeIcon aria-hidden size={18} />
-            QR
-          </Link>
+      {showMenu && (
+        <nav className="app-header-menu" aria-label="ユーザーメニュー">
+          {isAdmin && (
+            <>
+              <Link href="/admin/users">
+                <UsersIcon aria-hidden size={18} />
+                ユーザー
+              </Link>
+              <Link href="/admin/qr">
+                <QrCodeIcon aria-hidden size={18} />
+                QR
+              </Link>
+            </>
+          )}
+          <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut}>
+            <LogOutIcon aria-hidden size={18} />
+            {isLoggingOut ? "ログアウト中…" : "ログアウト"}
+          </button>
+          {logoutError && <p className="app-header-error" role="alert">{logoutError}</p>}
         </nav>
       )}
     </header>
