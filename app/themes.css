@@ -1,0 +1,244 @@
+/*
+ * 配色の定義。画面のCSSは色を直接書かず、ここの変数（var(--...)）を使う。
+ * 配色を増やすときは、同じ変数をすべて定義したブロックを足し、lib/themes.ts にも登録する。
+ */
+
+/* ダークレッド（初期配色）。data-theme がないときもこの配色になる */
+:root,
+:root[data-theme="dark-red"] {
+  --scheme: dark;
+
+  --bg-app: #000000;
+  --bg-app-alt: #09090b;
+  --bg-card: #18181b;
+  --bg-modal: #18181b;
+  --bg-input: #27272a;
+  --bg-secondary-button: #27272a;
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  --header-bg: #e11d48;
+  --on-header: #ffffff;
+  --header-pill: rgba(255, 255, 255, 0.15);
+  --header-pill-hover: rgba(255, 255, 255, 0.25);
+
+  --accent: #e11d48;
+  --accent-hover: #e11d48;
+  --on-accent: #ffffff;
+  --accent-text: #e11d48;
+  --accent-soft-bg: #4c0519;
+  --accent-soft-text: #fda4af;
+
+  --primary-bg: #be123c;
+  --primary-bg-hover: #be123c;
+  --primary-text: #ffffff;
+
+  --reserve-bg: #fbbf24;
+  --reserve-text: #1c1917;
+  --reserved-text: #fbbf24;
+
+  --danger-text: #fda4af;
+  --danger-border: #e11d48;
+  --error-text: #fecdd3;
+  --error-border: #9f1239;
+  --admin-border: #be123c;
+
+  --text: #ffffff;
+  --text-page: #fafafa;
+  --text-list: #e4e4e7;
+  --text-muted: #bcbcc4;
+  --text-subtle: #a1a1aa;
+  --button-link-text: #fdfdfd;
+
+  --border-card: #52525b;
+  --border-card-soft: #3f3f46;
+  --border-modal: #27272a;
+  --border-divider: #27272a;
+  --border-input: #71717a;
+  --focus-ring: #fda4af;
+
+  --badge-bg: #27272a;
+  --badge-text: #d4d4d8;
+
+  --login-bg: #27272a;
+  --login-border: #3f3f46;
+  --login-text: #ffffff;
+}
+
+/* ライトブルー（白地に薄い青） */
+:root[data-theme="light-blue"] {
+  --scheme: light;
+
+  --bg-app: #ffffff;
+  --bg-app-alt: #ffffff;
+  --bg-card: #f1f5f9;
+  --bg-modal: #ffffff;
+  --bg-input: #ffffff;
+  --bg-secondary-button: #f1f5f9;
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  --header-bg: #7dd3fc;
+  --on-header: #0f172a;
+  --header-pill: rgba(15, 23, 42, 0.08);
+  --header-pill-hover: rgba(15, 23, 42, 0.16);
+
+  --accent: #7dd3fc;
+  --accent-hover: #38bdf8;
+  --on-accent: #0f172a;
+  --accent-text: #0369a1;
+  --accent-soft-bg: #e0f2fe;
+  --accent-soft-text: #0369a1;
+
+  --primary-bg: #7dd3fc;
+  --primary-bg-hover: #38bdf8;
+  --primary-text: #0f172a;
+
+  --reserve-bg: #bbf6ab;
+  --reserve-text: #1c1917;
+  --reserved-text: #b45309;
+
+  --danger-text: #be123c;
+  --danger-border: #be123c;
+  --error-text: #be123c;
+  --error-border: #fda4af;
+  --admin-border: #7dd3fc;
+
+  --text: #0f172a;
+  --text-page: #0f172a;
+  --text-list: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #475569;
+  --button-link-text: #0369a1;
+
+  --border-card: #cbd5e1;
+  --border-card-soft: #cbd5e1;
+  --border-modal: #cbd5e1;
+  --border-divider: #e2e8f0;
+  --border-input: #94a3b8;
+  --focus-ring: #0369a1;
+
+  --badge-bg: #e2e8f0;
+  --badge-text: #334155;
+
+  --login-bg: #7dd3fc;
+  --login-border: #7dd3fc;
+  --login-text: #0f172a;
+}
+
+/* ライトオレンジ（light-blue の水色をオレンジに置き換え。白地＋オレンジ） */
+:root[data-theme="light-orange"] {
+  --scheme: light;
+
+  --bg-app: #ffffff;
+  --bg-app-alt: #ffffff;
+  --bg-card: #f1f5f9;
+  --bg-modal: #ffffff;
+  --bg-input: #ffffff;
+  --bg-secondary-button: #f1f5f9;
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  --header-bg: #ee6a17;
+  --on-header: #0f172a;
+  --header-pill: rgba(15, 23, 42, 0.08);
+  --header-pill-hover: rgba(15, 23, 42, 0.16);
+
+  --accent: #ee6a17;
+  --accent-hover: #ee6a17;
+  --on-accent: #0f172a;
+  --accent-text: #b45309;
+  --accent-soft-bg: #ffedd5;
+  --accent-soft-text: #b45309;
+
+  --primary-bg: #b45309;
+  --primary-bg-hover: #b45309;
+  --primary-text: #0f172a;
+
+  --reserve-bg: #dbb0e0;
+  --reserve-text: #1c1917;
+  --reserved-text: #b45309;
+
+  --danger-text: #be123c;
+  --danger-border: #be123c;
+  --error-text: #be123c;
+  --error-border: #fda4af;
+  --admin-border: #b45309;
+
+  --text: #0f172a;
+  --text-page: #0f172a;
+  --text-list: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #475569;
+  --button-link-text: #b45309;
+
+  --border-card: #cbd5e1;
+  --border-card-soft: #cbd5e1;
+  --border-modal: #cbd5e1;
+  --border-divider: #e2e8f0;
+  --border-input: #94a3b8;
+  --focus-ring: #b45309;
+
+  --badge-bg: #e2e8f0;
+  --badge-text: #334155;
+
+  --login-bg: #e69f00;
+  --login-border: #e69f00;
+  --login-text: #0f172a;
+}
+
+:root[data-theme="colorful"] {
+  --scheme: light;
+
+  --bg-app: #982f2f;
+  --bg-app-alt: #5d8d97;
+  --bg-card: #c137a1;
+  --bg-modal: #308a2d;
+  --bg-input: #1fa7cd;
+  --bg-secondary-button: #f1f5f9;
+  --overlay: rgba(65, 168, 166, 0.6);
+
+  --header-bg: #4617ee71;
+  --on-header: #498e6f;
+  --header-pill: rgba(121, 143, 194, 0.08);
+  --header-pill-hover: rgba(129, 160, 62, 0.971);
+
+  --accent: #35957f;
+  --accent-hover: #a7a570;
+  --on-accent: #698ad6;
+  --accent-text: #42862d;
+  --accent-soft-bg: #a8804b;
+  --accent-soft-text: #47e049;
+
+  --primary-bg: #bdeb3d;
+  --primary-bg-hover: #de50e1;
+  --primary-text: #0f172a;
+
+  --reserve-bg: #dbb0e0;
+  --reserve-text: #1c1917;
+  --reserved-text: #b45309;
+
+  --danger-text: #be123c;
+  --danger-border: #be123c;
+  --error-text: #be123c;
+  --error-border: #fda4af;
+  --admin-border: #b45309;
+
+  --text: #0f172a;
+  --text-page: #0f172a;
+  --text-list: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #475569;
+  --button-link-text: #b45309;
+
+  --border-card: #cbd5e1;
+  --border-card-soft: #cbd5e1;
+  --border-modal: #cbd5e1;
+  --border-divider: #e2e8f0;
+  --border-input: #94a3b8;
+  --focus-ring: #b45309;
+
+  --badge-bg: #e2e8f0;
+  --badge-text: #334155;
+
+  --login-bg: #e69f00;
+  --login-border: #e69f00;
+  --login-text: #0f172a;
+}

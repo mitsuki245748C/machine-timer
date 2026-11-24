@@ -12,14 +12,14 @@ export default function PrivacyPolicyPage() {
           maxWidth: "720px",
           margin: "0 auto",
           padding: "3rem 1.5rem",
-          color: "#e4e4e7",
+          color: "var(--text-list)",
           lineHeight: 1.8,
         }}
       >
-        <h1 style={{ color: "#ffffff", fontSize: "2rem", marginBottom: "0.5rem" }}>
+        <h1 style={{ color: "var(--text)", fontSize: "2rem", marginBottom: "0.5rem" }}>
           プライバシーポリシー
         </h1>
-        <p style={{ color: "#a1a1aa", fontSize: "0.9rem", marginBottom: "2rem" }}>
+        <p style={{ color: "var(--text-subtle)", fontSize: "0.9rem", marginBottom: "2rem" }}>
           最終更新日：2026年10月27日
         </p>
 
@@ -31,7 +31,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section style={{ marginBottom: "1.75rem" }}>
-          <h2 style={{ color: "#ffffff", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          <h2 style={{ color: "var(--text)", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
             1. 取得する情報
           </h2>
           <p>本アプリは、サービスの提供のために以下の情報を取得します。</p>
@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section style={{ marginBottom: "1.75rem" }}>
-          <h2 style={{ color: "#ffffff", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          <h2 style={{ color: "var(--text)", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
             2. 情報の利用目的
           </h2>
           <p>取得した情報は、以下の目的で利用します。</p>
@@ -57,7 +57,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section style={{ marginBottom: "1.75rem" }}>
-          <h2 style={{ color: "#ffffff", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          <h2 style={{ color: "var(--text)", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
             3. 情報の第三者提供
           </h2>
           <p>
@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section style={{ marginBottom: "1.75rem" }}>
-          <h2 style={{ color: "#ffffff", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          <h2 style={{ color: "var(--text)", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
             4. 情報の管理
           </h2>
           <p>
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section style={{ marginBottom: "1.75rem" }}>
-          <h2 style={{ color: "#ffffff", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          <h2 style={{ color: "var(--text)", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
             5. 情報の削除
           </h2>
           <p>
@@ -89,7 +89,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section style={{ marginBottom: "1.75rem" }}>
-          <h2 style={{ color: "#ffffff", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          <h2 style={{ color: "var(--text)", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
             6. お問い合わせ
           </h2>
           <p>
@@ -98,7 +98,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section style={{ marginBottom: "1.75rem" }}>
-          <h2 style={{ color: "#ffffff", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
+          <h2 style={{ color: "var(--text)", fontSize: "1.25rem", marginBottom: "0.5rem" }}>
             7. 本ポリシーの変更
           </h2>
           <p>
