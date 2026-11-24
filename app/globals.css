@@ -173,14 +173,14 @@ body {
   padding: 0 0.6rem;
   border: 1px solid #3f3f46;
   border-radius: 999px;
-  color: #fda4af;
+  color: var(--records-link-color);
   font-size: 0.8rem;
   font-weight: 700;
   text-decoration: none;
 }
 
 .machine-records-link:hover {
-  background: #27272a;
+  background: var(--records-link-hover);
 }
 
 .machine-records-link:focus-visible {
