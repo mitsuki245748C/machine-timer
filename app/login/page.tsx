@@ -20,22 +20,10 @@ export default function LoginPage() {
     <div className="home">
       <AppHeader showMenu={false} />
       <main className="machine-panel" aria-label="ログイン">
-      <p style={{ color: "var(--text-subtle)" }}>
-       Googleアカウントでログインしなさい
-      </p>
-        <button
-          onClick={() => void handleGoogleLogin()}
-          style={{
-            padding: "12px 20px",
-            fontSize: "1rem",
-            fontWeight: 600,
-            cursor: "pointer",
-            borderRadius: "6px",
-            border: "1px solid var(--login-border)",
-            backgroundColor: "var(--login-bg)",
-            color: "var(--login-text)",
-          }}
-        >
+        <p className="login-message">
+          Googleアカウントでログインしてください
+        </p>
+        <button className="login-button" onClick={() => void handleGoogleLogin()}>
           ログイン
         </button>
       </main>
