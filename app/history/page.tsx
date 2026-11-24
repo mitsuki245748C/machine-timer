@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useStopwatches } from "../stopwatch/use-stopwatches";
-import { isPositiveId, parseSets, type Exercise, type HistoryData, type SetInput, type LatestWorkout, type WorkoutSession } from "@/lib/workouts";
+import { BODY_PARTS, isPositiveId, parseSets, type BodyPart, type Exercise, type HistoryData, type SetInput, type LatestWorkout, type WorkoutSession } from "@/lib/workouts";
 import styles from "./history.module.css";
 
 type WorkoutDraft = {
@@ -68,6 +68,7 @@ function HistoryForm({ machineId }: { machineId: number }) {
   const [sets, setSets] = useState<SetInput[]>([{ weight: "", reps: "" }]);
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
+  const [bodyPart, setBodyPart] = useState<BodyPart>("other");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
   const [notice, setNotice] = useState("");
@@ -149,7 +150,7 @@ function HistoryForm({ machineId }: { machineId: number }) {
     try {
       const response = await fetch("/api/exercises", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ machineId, name: name.trim() }),
+        body: JSON.stringify({ machineId, name: name.trim(), bodyPart }),
       });
       const { exercise }: { exercise: Exercise } = await responseData(response);
       setHistory((current) => current ? {
@@ -159,6 +160,7 @@ function HistoryForm({ machineId }: { machineId: number }) {
       } : current);
       setExerciseId(String(exercise.id));
       setName("");
+      setBodyPart("other");
       setShowAdd(false);
       setNotice(`「${exercise.name}」を追加しました。`);
     } catch (error) {
@@ -281,6 +283,10 @@ function HistoryForm({ machineId }: { machineId: number }) {
             <form className={styles.addForm} onSubmit={addExercise}>
               <label className={styles.srOnly} htmlFor="exercise-name">種目名</label>
               <input id="exercise-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={100} required disabled={locked} placeholder="種目名" />
+              <label className={styles.srOnly} htmlFor="exercise-body-part">メインの部位</label>
+              <select id="exercise-body-part" value={bodyPart} onChange={(event) => setBodyPart(event.target.value as BodyPart)} disabled={locked}>
+                {BODY_PARTS.map(({ id, label }) => <option key={id} value={id}>{id === "other" ? "部位：その他" : `部位：${label}`}</option>)}
+              </select>
               {addError && <p role="alert" className={styles.error}>{addError}</p>}
               <div className={styles.addActions}>
                 <button className={styles.secondary} type="button" disabled={locked} onClick={() => { setShowAdd(false); setAddError(""); }}>キャンセル</button>
