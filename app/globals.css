@@ -287,3 +287,18 @@ body {
   font-size: 0.85rem;
   margin: 0;
 }
+
+.login-message {
+  color: var(--text-subtle);
+}
+
+.login-button {
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--login-border);
+  background-color: var(--login-bg);
+  color: var(--login-text);
+}
