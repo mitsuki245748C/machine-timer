@@ -1,0 +1,107 @@
+.page {
+  min-height: 100dvh;
+  background: #09090b;
+  color: #fafafa;
+  font-family: Arial, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  line-height: 1.6;
+  color-scheme: dark;
+}
+.page * { box-sizing: border-box; }
+.main { width: 100%; max-width: 520px; margin: 0 auto; padding: 16px 16px max(24px, env(safe-area-inset-bottom)); }
+.main button { font-family: inherit; color: inherit; cursor: pointer; }
+.main :is(button, a):focus-visible { outline: 3px solid #fda4af; outline-offset: 2px; }
+.title { font-size: 20px; margin: 0 0 12px; }
+
+/* 検索 */
+.search { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 4px 0 12px; margin-bottom: 12px; background: #27272a; border: 1px solid #52525b; border-radius: 12px; }
+.search:focus-within { border-color: #fda4af; }
+.search > svg { flex-shrink: 0; color: #a1a1aa; }
+.search input { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; color: #fafafa; font: inherit; font-size: 16px; outline: none; }
+.search input::-webkit-search-cancel-button { display: none; }
+.search button { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; border-radius: 999px; background: transparent; color: #a1a1aa !important; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* 表示切り替えタブ */
+.tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; margin-bottom: 16px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; }
+.tabs button { min-height: 40px; border: 0; border-radius: 8px; background: transparent; color: #a1a1aa; font-size: 14px; font-weight: 700; }
+.tabs .activeTab { background: #be123c; color: #fff; }
+
+.muted { color: #a1a1aa; font-size: 13px; overflow-wrap: anywhere; }
+.empty { color: #a1a1aa; font-size: 14px; padding: 24px 0; text-align: center; }
+.error { color: #fecdd3; font-size: 14px; }
+.message { padding: 16px; border: 1px solid #9f1239; border-radius: 8px; color: #fecdd3; font-size: 14px; }
+.secondary { width: 100%; min-height: 48px; margin-top: 8px; border: 1px solid #71717a; border-radius: 8px; background: #27272a; font-size: 16px; }
+.secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 器具別 */
+.cardList, .sessionList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.card { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; text-align: left; background: #18181b; border: 1px solid #3f3f46; border-radius: 12px; }
+.card:hover { border-color: #71717a; }
+.card > svg { flex-shrink: 0; color: #71717a; }
+.cardMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cardMain strong { font-size: 16px; overflow-wrap: anywhere; }
+.back { display: inline-flex; align-items: center; gap: 2px; min-height: 40px; padding: 0; border: 0; background: transparent; color: #fda4af !important; font-size: 14px; }
+.sectionTitle { font-size: 18px; margin: 0 0 12px; overflow-wrap: anywhere; }
+
+/* 部位別 */
+.partHeading { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 8px; padding: 0 4px; border: 0; border-bottom: 1px solid #27272a; background: transparent; text-align: left; }
+.partHeading strong { font-size: 16px; color: #fda4af; }
+.partHeading > svg { flex-shrink: 0; color: #a1a1aa; transition: transform 0.15s; }
+.partHeading > svg.collapsed { transform: rotate(-90deg); }
+.partChips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.partChip { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 999px; background: #3f3f46; color: #e4e4e7; font-size: 12px; font-weight: 700; line-height: 20px; }
+
+/* 日付別・日別詳細 */
+.timeline { display: flex; flex-direction: column; gap: 20px; }
+.dayHeading { position: sticky; top: 0; z-index: 1; margin: 0 0 8px; padding: 6px 0; font-size: 14px; color: #fda4af; background: #09090b; border-bottom: 1px solid #27272a; }
+.sessionRow { width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; text-align: left; background: #18181b; border: 1px solid #27272a; border-radius: 10px; }
+button.sessionRow:hover { border-color: #52525b; }
+.sessionTitle { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+.sessionTitle strong { font-size: 15px; overflow-wrap: anywhere; }
+.sets { font-size: 14px; color: #e4e4e7; overflow-wrap: anywhere; }
+
+/* カレンダー */
+.monthNav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.monthNav h2 { margin: 0; font-size: 16px; }
+.monthNav button { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid #3f3f46; border-radius: 999px; background: #18181b; }
+.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.weekday { text-align: center; font-size: 12px; color: #a1a1aa; padding: 4px 0; }
+.weekday:first-child { color: #fda4af; }
+.weekday:nth-child(7) { color: #93c5fd; }
+.day { position: relative; aspect-ratio: 1; min-height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #71717a !important; font-size: 14px; }
+.hasRecord { background: #27272a; color: #fafafa !important; font-weight: 700; }
+.today { border-color: #71717a; }
+.selected { border-color: #fda4af; background: #4c0519; color: #fff !important; }
+.dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 100%; }
+.dayNav { display: flex; justify-content: space-between; gap: 8px; margin: 12px 0; }
+.dayNav button { display: inline-flex; align-items: center; gap: 2px; min-height: 40px; padding: 0 12px; border: 1px solid #3f3f46; border-radius: 999px; background: #18181b; font-size: 14px; }
+.dayNav button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* 部位で絞り込み（色の凡例も兼ねる） */
+.partFilter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.partFilter button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid #3f3f46; border-radius: 999px; background: #18181b; color: #d4d4d8 !important; font-size: 13px; font-weight: 700; }
+.partFilter button[aria-pressed="true"] { border-color: #fda4af; background: #4c0519; color: #fff !important; }
+
+/* モーダル（種目ごとの全履歴） */
+.modalOverlay { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center; background: rgba(0, 0, 0, 0.6); }
+.modal { width: 100%; max-width: 520px; max-height: 80dvh; display: flex; flex-direction: column; background: #18181b; border: 1px solid #27272a; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+.modalHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #27272a; flex-shrink: 0; }
+.modalHead h2 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.modalClose { flex-shrink: 0; width: 40px; height: 40px; border: 0; background: transparent; color: #a1a1aa !important; font-size: 18px; }
+.modalBody { overflow-y: auto; padding: 8px 20px 16px; }
+.historySession { padding: 12px 0; border-bottom: 1px solid #27272a; }
+.historySession:last-child { border-bottom: none; }
+.historySession h3 { margin: 0 0 6px; font-size: 14px; color: #fda4af; }
+.historySession ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.historySession li { font-size: 14px; color: #e4e4e7; }
+
+/* 部位ごとの色（カレンダーの点・絞り込み・ラベルで共通） */
+.page [data-part="chest"] { --part: #fb7185; }
+.page [data-part="back"] { --part: #60a5fa; }
+.page [data-part="shoulders"] { --part: #fbbf24; }
+.page [data-part="arms"] { --part: #c084fc; }
+.page [data-part="legs"] { --part: #4ade80; }
+.page [data-part="abs"] { --part: #22d3ee; }
+.page [data-part="other"] { --part: #a1a1aa; }
+.partDot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 999px; background: var(--part, #e11d48); }
+.partChip::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--part, #a1a1aa); }

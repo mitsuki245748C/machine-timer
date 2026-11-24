@@ -1,8 +1,11 @@
 "use client";
 
+import { ClipboardListIcon } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useStopwatches } from "./use-stopwatches";
 import { useRouter } from "next/navigation";
+import { RESERVATION_HOLD_SECONDS } from "./model";
 
 type Machine = {
   id: number;
@@ -18,6 +21,12 @@ function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   return `${minutes.toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 }
+
+function formatRemaining(seconds: number): string {
+  return `${Math.floor(seconds / 60)}分${(seconds % 60).toString().padStart(2, "0")}秒`;
+}
+
+const HOLD_MINUTES = RESERVATION_HOLD_SECONDS / 60;
 
 export function Stopwatch() {
   const router = useRouter();
@@ -105,7 +114,11 @@ export function Stopwatch() {
           const startedByMe = state?.startedByMe ?? false;
           const isReserved = state?.isReserved ?? false;
           const reservedByMe = state?.reservedByMe ?? false;
-          const canControl = !isRunning || startedByMe;
+          const hold = state?.hold ?? null;
+          const myReservation = data?.myReservationMachineId ?? null;
+          const hasOtherReservation = myReservation !== null && myReservation !== machine.id;
+          const waitingForOthers = !isRunning && hold !== null && !hold.forMe;
+          const canControl = (!isRunning && !waitingForOthers) || startedByMe;
           const canForceEnd = (data?.isAdmin ?? false) && isRunning;
 
           return (
@@ -114,8 +127,28 @@ export function Stopwatch() {
               className="machine"
               aria-labelledby={`machine-${machine.id}`}
             >
+              {/* この器具で行った種目の記録へ（記録画面の検索に器具名を入れて開く） */}
+              <Link
+                href={`/records?q=${encodeURIComponent(machine.name)}`}
+                className="machine-records-link"
+                aria-label={`${machine.name}の記録を見る`}
+              >
+                <ClipboardListIcon aria-hidden size={16} />
+                記録
+              </Link>
               <h2 id={`machine-${machine.id}`}>{machine.name}</h2>
-              <p>Status: {data ? (isRunning ? "使用中" : "空き") : "--"}</p>
+              <p>
+                Status:{" "}
+                {!data
+                  ? "--"
+                  : isRunning
+                    ? "使用中"
+                    : hold
+                      ? hold.forMe
+                        ? "あなたの番です"
+                        : "予約した人の順番"
+                      : "空き"}
+              </p>
               <div className="stopwatch">
                 <p>{data ? formatTime(state?.seconds ?? 0) : "--:--"}</p>
 
@@ -124,19 +157,45 @@ export function Stopwatch() {
                     予約されています。長時間の利用はおやめください。
                   </p>
                 )}
+                {hold?.forMe && (
+                  <p className="machine-notice">
+                    予約していた器具が空きました。あと{formatRemaining(hold.secondsLeft)}の間は、あなただけが開始できます。
+                  </p>
+                )}
 
                 <div className="stopwatch-controls">
-                  {canControl ? (
-                    <button
-                      className="machine-button"
-                      onClick={() => void handleRecordButtonClick(machine.id, isRunning)}
-                      disabled={disabled}
-                    >
-                      {isUpdating ? "更新中..." : isRunning ? "記録に戻る" : "開始する"}
-                    </button>
+                  {waitingForOthers ? (
+                    <>
+                      <p className="machine-reserved">予約した人の順番です</p>
+                      <p className="machine-notice">
+                        あと{formatRemaining(hold.secondsLeft)}で、誰でも使えるようになります
+                      </p>
+                    </>
+                  ) : canControl ? (
+                    <>
+                      <button
+                        className="machine-button"
+                        onClick={() => void handleRecordButtonClick(machine.id, isRunning)}
+                        disabled={disabled}
+                      >
+                        {isUpdating ? "更新中..." : isRunning ? "記録に戻る" : "開始する"}
+                      </button>
+                      {hold?.forMe && (
+                        <button
+                          className="machine-button-danger"
+                          onClick={() => void handleReservationButtonClick(machine.id, "cancel")}
+                          disabled={disabled}
+                        >
+                          予約をキャンセル
+                        </button>
+                      )}
+                    </>
                   ) : reservedByMe ? (
                     <>
-                      <p className="machine-reserved">予約しています</p>
+                      <p className="machine-reserved">あなたが予約しています</p>
+                      <p className="machine-notice">
+                        空いたらメールでお知らせします。空いてから{HOLD_MINUTES}分間は、あなただけが開始できます。
+                      </p>
                       <button
                         className="machine-button-danger"
                         onClick={() => void handleReservationButtonClick(machine.id, "cancel")}
@@ -146,7 +205,18 @@ export function Stopwatch() {
                       </button>
                     </>
                   ) : isReserved ? (
-                    <p className="machine-reserved">予約済みです</p>
+                    <>
+                      <p className="machine-reserved">ほかの人が予約しています</p>
+                    </>
+                  ) : hasOtherReservation ? (
+                    <>
+                      <button className="machine-button-reserve" disabled>
+                        予約できません
+                      </button>
+                      <p className="machine-notice">
+                        予約は1人1つまでです
+                      </p>
+                    </>
                   ) : (
                     <button
                       className="machine-button-reserve"

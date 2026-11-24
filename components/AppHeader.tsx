@@ -1,16 +1,18 @@
 "use client";
 
-import { LogOutIcon, QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
+import { ClipboardListIcon, LogOutIcon, QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 type Props = {
   // ログイン前の画面ではメニューを表示せず、管理者かどうかも問い合わせない
   showMenu?: boolean;
 };
 
-// 共通の赤いヘッダー。右にログアウトと、管理者向けのリンクを出す
+// 共通ヘッダー。配色はログイン前でも変更できる。
 export function AppHeader({ showMenu = true }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -52,27 +54,34 @@ export function AppHeader({ showMenu = true }: Props) {
       <Link href="/" className="app-header-home" aria-label="器具一覧へ">
         <TimerIcon aria-hidden size={24} />
       </Link>
-      {showMenu && (
-        <nav className="app-header-menu" aria-label="ユーザーメニュー">
-          {isAdmin && (
-            <>
-              <Link href="/admin/users">
-                <UsersIcon aria-hidden size={18} />
-                ユーザー
-              </Link>
-              <Link href="/admin/qr">
-                <QrCodeIcon aria-hidden size={18} />
-                QR
-              </Link>
-            </>
-          )}
-          <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut}>
-            <LogOutIcon aria-hidden size={18} />
-            {isLoggingOut ? "ログアウト中…" : "ログアウト"}
-          </button>
-          {logoutError && <p className="app-header-error" role="alert">{logoutError}</p>}
-        </nav>
-      )}
+      <div className="app-header-actions">
+        {showMenu && (
+          <nav className="app-header-menu" aria-label="ユーザーメニュー">
+            <Link href="/records">
+              <ClipboardListIcon aria-hidden size={18} />
+              記録
+            </Link>
+            {isAdmin && (
+              <>
+                <Link href="/admin/users">
+                  <UsersIcon aria-hidden size={18} />
+                  ユーザー
+                </Link>
+                <Link href="/admin/qr">
+                  <QrCodeIcon aria-hidden size={18} />
+                  QR
+                </Link>
+              </>
+            )}
+            <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut}>
+              <LogOutIcon aria-hidden size={18} />
+              {isLoggingOut ? "ログアウト中…" : "ログアウト"}
+            </button>
+            {logoutError && <p className="app-header-error" role="alert">{logoutError}</p>}
+          </nav>
+        )}
+        <ThemeSwitcher />
+      </div>
     </header>
   );
 }
