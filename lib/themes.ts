@@ -3,6 +3,8 @@
 export const THEMES = [
   { id: "dark-red", label: "ダークレッド" },
   { id: "light-blue", label: "ライトブルー" },
+  { id: "light-orange", label: "ライトオレンジ" },
+  { id: "colorful", label: "カラフル" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

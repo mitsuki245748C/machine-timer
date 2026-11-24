@@ -2,6 +2,12 @@
 /* =====アプリの見た目↓===== */
 /* 色は app/themes.css の変数を使う。色そのものはここに書かない */
 
+html,
+body {
+  margin: 0;
+  background: var(--bg-app);
+}
+
 .home {
   display: flex;
   flex-direction: column;
