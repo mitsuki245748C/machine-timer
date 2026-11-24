@@ -25,6 +25,9 @@ body {
   padding: 0 1rem;
   background: var(--header-bg);
   color: var(--on-header);
+  /* 画面ごとの文字設定（記録・履歴の .page など）に左右されず、どの画面でも同じ表示にする */
+  font-family: Arial, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  line-height: 1.6;
 }
 
 .app-header-home {
@@ -36,7 +39,7 @@ body {
   padding: 0 0.75rem;
   border-radius: 999px;
   color: var(--on-header);
-  font-size: 1rem;
+  font-size: 1.35rem;
   font-weight: 700;
   white-space: nowrap;
   text-decoration: none;
@@ -51,16 +54,49 @@ body {
   gap: 0.5rem;
 }
 
-.app-header-menu {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
+/* ハンバーガーメニュー。ボタンの下に開くパネルへ、ユーザー・QR・ログアウト・配色を入れる */
+.app-header-hamburger {
+  position: relative;
 }
 
-.app-header-menu :is(a, button) {
+.app-header-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--header-pill);
+  color: var(--on-header);
+  cursor: pointer;
+}
+
+.app-header-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 12rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: var(--header-bg);
+  color: var(--on-header);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.app-header-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.app-header-menu :is(a, button),
+.app-header-records {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -78,10 +114,21 @@ body {
   cursor: pointer;
 }
 
-/* 配色の切り替え（components/ThemeSwitcher.tsx） */
-.theme-select {
+/* 配色の切り替え（components/ThemeSwitcher.tsx）。「カラー」を押すと一覧が開く */
+.theme-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.theme-switcher-toggle,
+.theme-switcher-list button {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
   min-height: 36px;
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
   border: 0;
   border-radius: 999px;
   background: var(--header-pill);
@@ -90,19 +137,37 @@ body {
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
 }
 
-/* 選択肢の一覧はブラウザ標準の白地で出るので、文字は読める色に戻す */
-.theme-select option {
-  background: #ffffff;
-  color: #0f172a;
+.theme-switcher-chevron {
+  margin-left: auto;
+  transition: transform 0.15s;
 }
 
-:is(.app-header-home, .app-header-menu a, .app-header-menu button:enabled, .theme-select):hover {
+.theme-switcher-chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.theme-switcher-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0 0 0 0.75rem;
+  list-style: none;
+}
+
+.theme-switcher-list button {
+  justify-content: space-between;
+}
+
+:is(.app-header-home, .app-header-records, .app-header-toggle, .app-header-menu a, .app-header-menu button:enabled, .theme-switcher-toggle, .theme-switcher-list button):hover {
   background: var(--header-pill-hover);
 }
 
-:is(.app-header-home, .app-header-menu a, .app-header-menu button, .theme-select):focus-visible {
+:is(.app-header-home, .app-header-records, .app-header-toggle, .app-header-menu a, .app-header-menu button, .theme-switcher-toggle, .theme-switcher-list button):focus-visible {
   outline: 2px solid var(--on-header);
   outline-offset: 2px;
 }

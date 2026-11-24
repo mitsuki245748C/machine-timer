@@ -1,24 +1,46 @@
 "use client";
 
-import { THEMES, parseTheme } from "@/lib/themes";
+import { CheckIcon, ChevronDownIcon, PaletteIcon } from "lucide-react";
+import { useState } from "react";
+import { THEMES } from "@/lib/themes";
 import { useTheme } from "./ThemeProvider";
 
-// ヘッダーに置く配色の切り替え。配色が増えても選択肢が増えるだけで済むよう、セレクトにしている
+// ヘッダーのメニューに置く配色の切り替え。「カラー」を押すと配色の一覧がプルダウンで開く。配色が増えても THEMES に足すだけで済む
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
+  const [open, setOpen] = useState(false);
 
   return (
-    <select
-      className="theme-select"
-      aria-label="配色"
-      value={theme}
-      onChange={(event) => setTheme(parseTheme(event.target.value))}
-    >
-      {THEMES.map(({ id, label }) => (
-        <option key={id} value={id}>
-          {label}
-        </option>
-      ))}
-    </select>
+    <div className="theme-switcher">
+      <button
+        type="button"
+        className="theme-switcher-toggle"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <PaletteIcon aria-hidden size={18} />
+        カラー
+        <ChevronDownIcon aria-hidden size={16} className="theme-switcher-chevron" data-open={open} />
+      </button>
+      {open && (
+        <ul className="theme-switcher-list" role="listbox" aria-label="配色">
+          {THEMES.map(({ id, label }) => (
+            <li key={id} role="option" aria-selected={id === theme}>
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme(id);
+                  setOpen(false);
+                }}
+              >
+                {label}
+                {id === theme && <CheckIcon aria-hidden size={16} />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

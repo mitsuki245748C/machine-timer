@@ -1,8 +1,8 @@
 "use client";
 
-import { ClipboardListIcon, LogOutIcon, QrCodeIcon, TimerIcon, UsersIcon } from "lucide-react";
+import { ClipboardListIcon, LogOutIcon, MenuIcon, QrCodeIcon, UsersIcon, XIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import { ThemeSwitcher } from "./ThemeSwitcher";
@@ -12,11 +12,30 @@ type Props = {
   showMenu?: boolean;
 };
 
-// 共通ヘッダー。配色はログイン前でも変更できる。
+// 共通ヘッダー。記録へのリンクだけ外に出し、ユーザー・QR・ログアウト・配色はハンバーガーメニューにまとめる。配色はログイン前でも変更できる。
 export function AppHeader({ showMenu = true }: Props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // メニューの外を押したり Esc を押したりしたら閉じる
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!showMenu) return;
@@ -56,31 +75,51 @@ export function AppHeader({ showMenu = true }: Props) {
       </Link>
       <div className="app-header-actions">
         {showMenu && (
-          <nav className="app-header-menu" aria-label="ユーザーメニュー">
-            <Link href="/records">
-              <ClipboardListIcon aria-hidden size={18} />
-              記録
-            </Link>
-            {isAdmin && (
-              <>
-                <Link href="/admin/users">
-                  <UsersIcon aria-hidden size={18} />
-                  ユーザー
-                </Link>
-                <Link href="/admin/qr">
-                  <QrCodeIcon aria-hidden size={18} />
-                  QR
-                </Link>
-              </>
-            )}
-            <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut}>
-              <LogOutIcon aria-hidden size={18} />
-              {isLoggingOut ? "ログアウト中…" : "ログアウト"}
-            </button>
-            {logoutError && <p className="app-header-error" role="alert">{logoutError}</p>}
-          </nav>
+          <Link href="/records" className="app-header-records">
+            <ClipboardListIcon aria-hidden size={18} />
+            記録
+          </Link>
         )}
-        <ThemeSwitcher />
+        <div className="app-header-hamburger" ref={menuRef}>
+          <button
+            type="button"
+            className="app-header-toggle"
+            aria-label="メニュー"
+            aria-expanded={menuOpen}
+            aria-controls="app-header-panel"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <XIcon aria-hidden size={20} /> : <MenuIcon aria-hidden size={20} />}
+          </button>
+          {menuOpen && (
+            <div id="app-header-panel" className="app-header-panel">
+              <nav className="app-header-menu" aria-label="メニュー">
+                {showMenu && isAdmin && (
+                  <>
+                    <Link href="/admin/users" onClick={() => setMenuOpen(false)}>
+                      <UsersIcon aria-hidden size={18} />
+                      ユーザー
+                    </Link>
+                    <Link href="/admin/qr" onClick={() => setMenuOpen(false)}>
+                      <QrCodeIcon aria-hidden size={18} />
+                      QR
+                    </Link>
+                  </>
+                )}
+                <ThemeSwitcher />
+                {showMenu && (
+                  <>
+                    <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut}>
+                      <LogOutIcon aria-hidden size={18} />
+                      {isLoggingOut ? "ログアウト中…" : "ログアウト"}
+                    </button>
+                    {logoutError && <p className="app-header-error" role="alert">{logoutError}</p>}
+                  </>
+                )}
+              </nav>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
